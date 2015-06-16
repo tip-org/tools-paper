@@ -1,0 +1,39 @@
+\documentclass{llncs}
+
+
+%\usepackage{url}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{amsmath}  % for equation*
+\usepackage{array}    % for tabular
+\usepackage{verbatim} % for comment
+\usepackage{wrapfig}
+\usepackage[final]{microtype}
+\usepackage[pdfborder={0 0 0}]{hyperref}
+\usepackage{tabularx}
+
+
+\begin{document}
+
+\title{$title$}
+
+\author{Dan Ros\'{e}n \and Nicholas Smallbone}
+\institute{Department of Computer Science and Engineering, Chalmers University of Technology
+	\email{\{danr,nicsma\}@chalmers.se}
+	}
+
+\authorrunning{Ros\'{e}n, Smallbone}
+\titlerunning{$title$}
+
+\maketitle
+
+\begin{abstract}
+$abstract$
+\end{abstract}
+
+$body$
+
+\bibliographystyle{plain}
+\bibliography{bibfile}
+
+\end{document}

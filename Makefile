@@ -1,4 +1,4 @@
-TARGETS=paper.tex
+TARGETS=paper.pdf
 
 all: $(TARGETS)
 
@@ -7,6 +7,12 @@ clean:
 
 .PHONY: all clean
 
-%.tex: %.md
-	pandoc $< -o $@ --standalone --filter ./Filter.hs --bibliography=bibfile.bib
+TEMPLATE=latex.template
+BIBFILE=bibfile.bib
+FILTER=./Filter.hs
 
+%.tex: %.md $(TEMPLATE) $(BIBFILE) $(FILTER)
+	pandoc $< -o $@ --template $(TEMPLATE) --standalone --filter $(FILTER) --bibliography=$(BIBFILE)
+
+paper.pdf: paper.tex
+	latexmk -pdf $<
