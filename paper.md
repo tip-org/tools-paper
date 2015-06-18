@@ -7,7 +7,7 @@ abstract: We show our new toolbox for inductive theorem provers and benchmarks.
 
 We have observed a new growth in interest in automated inductive theorem proving,
 with support in dedicated and general theorem provers and assistants
-such as Zeno, HipSpec, Hipster, CVC4, Pirate, Dafny, and the Graph Thingy.
+such as Zeno, HipSpec, Hipster, CVC4, Pirate, Dafny, and the Graphsc.
 Spurred by this we started collecting benchmarks to be able to compare and
 evaluate theorem provers (in earlier work TIP). At the time of writing, we
 have 351 benchmarks.
@@ -15,7 +15,27 @@ have 351 benchmarks.
 However, they don't support the same formats.
 We identify a core of what the different theorem provers use and need.
 
-Maybe some example property right here
+Furthermore, our library contains many ingredients important for inductive
+theorem proving, for instance theory exploration. We show how to use
+the current infrastructure to connect the induction mode in CVC4 with
+QuickSpec2, in a bash script! (Add induction tactic to tip to use
+a theorem prover without induction
+(Z3 or with monotonox allows us to use E or vampire...)
+this is the essence of HipSpec, of course)
+
+Maybe some example property right here: side by side comparison
+of format supported by CVC4 and SMTInd.
+
+```{.tip-include }
+example.smt2
+```
+
+```{.tip-include
+    .TypeSkolemConjecture .Monomorphise .LambdaLift
+    .AxiomatizeLambdas .Monomorphise .NegateConjecture
+    .RemoveMatch .AxiomatizeFuncdefs}
+example.smt2
+```
 
 ## Contributions
 
@@ -30,6 +50,45 @@ Maybe some example property right here
   Should we try get a web interface up quickly?
 
 * Our framework is general: we can support different "logic" or "semantics",
+
+* We show how the command-line tools can be used to boost an inductive
+  theorem prover, dubbed Rudimentophocles.
+  Ultimately, we can envision our tool set to be a platform for
+  experimenting with induction. Developers will then not need
+  to make a theorem prover from scratch, but rather plug methods
+  from new insights in the existing infrastructure to be able
+  to evaluate it quickly.
+
+# The format
+
+Side-by-side comparison of SMT-LIB and our format,
+to discuss the different additions.
+
+(with other formats)
+
+For the different output formats:
+
+For CVC4, we remove all non-SMT-LIB stuff:
+    HOFs, assert-not, (parametric definitions) (function definitions)
+
+For Isabelle, we replace case with left-hand-side match
+
+For Haskell, we replace non-computable parts with uninterpreted functions
+    -- Equality:
+        maintain a set of functions that have an Eq constraint
+        we start off by the only function being equals.
+        when you look for functions that call functions that have
+        an eq constraint then it gets an eq constraint added.
+        then you repeat until you get a fixpoint.
+
+`tip-spec`... `tip-qc`/`hbmc`
+
+For TFF1, we axiomatize data types and function definitions
+    (the latter can be done in two different ways)
+
+For FOF, we use Monotonox (but what about the booleans?!)
+
+For THF, we add induction "schema" for data types.
 
 # Language design
 
@@ -67,7 +126,7 @@ We can support these semantics:
 
 Blanchettification for uninterpreted functions (also discussed in Hipster article)
 
-Allows theroem provers to use QuickSpec theory exploration in their tools
+Allows theorem provers to use QuickSpec theory exploration in their tools
 
 Not implemented: tuples to get right arity of QuickSpec functions
                  (needs a tuple constructor with size 0)

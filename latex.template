@@ -11,6 +11,7 @@
 \usepackage[final]{microtype}
 \usepackage[pdfborder={0 0 0}]{hyperref}
 \usepackage{tabularx}
+\usepackage{inconsolata}
 
 
 \begin{document}

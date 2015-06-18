@@ -22,11 +22,13 @@ transform (CodeBlock (name, ["include"], attrs) file) = do
 transform block = return block
 
 tipBlock name classes attrs expr =
-  CodeBlock (name, [], attrs) (mode modes (foldr (.) id (map pass passes) thy))
+  case parse expr of
+    Left err -> CodeBlock (name, [], attrs) err
+    Right thy ->
+      CodeBlock (name, [], attrs) (mode modes (foldr (.) id (map pass passes) thy))
   where
-    Right thy = parse expr
     (modes, passes) = go classes [] []
-    go [] modes passes = (reverse modes, reverse passes)
+    go [] modes passes = (reverse modes, passes)
     go ("no-datatypes":xs) modes passes = go xs (NoData:modes) passes
     go ("no-check-sat":xs) modes passes = go xs (NoCheckSat:modes) passes
     go ("no-functions":xs) modes passes = go xs (NoFuns:modes) passes
@@ -36,6 +38,7 @@ tipBlock name classes attrs expr =
       case reads x of
         [(pass, "")] -> go xs modes (pass:passes)
         _ -> error ("Unknown pass " ++ x)
+        -- Todo: use opt-parse-applicative
 
 data Mode = NoData | NoProp | NoFuns | NoCheckSat | Why3 deriving (Show, Eq)
 
