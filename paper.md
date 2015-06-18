@@ -37,6 +37,11 @@ Spurred by this we started collecting benchmarks to be able to compare and
 evaluate theorem provers (in earlier work TIP). At the time of writing, we
 have 351 benchmarks.
 
+So then two different goals:
+
+* To encourage people to write their own provers (based on our API or command-line tools or whatever)
+* To ease interopability with existing (and future provers) that want to use their own format.
+
 However, they don't support the same formats.
 We identify a core of what the different theorem provers use and need.
 
@@ -162,7 +167,10 @@ Implemented:
 
 * Simplification
 * Removing newtypes
+
 * Uncurrying the theory
+    * Helpful with HO-theories
+
 * Negating conjecture
 * Discriminators to match
 * Match to discriminators
