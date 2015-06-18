@@ -5,6 +5,31 @@ abstract: We show our new toolbox for inductive theorem provers and benchmarks.
 
 # Introduction
 
+When you make an inductive theorem prover, there are lots of stuff
+to take into consideration, like:
+
+* lambdas and higher-order functions
+* polymorphism
+* a nice frontend! (not to be neglected.)
+* benchmarks
+* connecting to an underlying prover (SMT rewriting or FO)
+* LEMMA DISCOVERY
+* falsifying conjectured lemmas,
+  which is usually not the focus of an inductive prover,
+  so you don't end up spending time on proving non-theorems
+  (hbmc/quickcheck)
+* instantiating induction schemas
+
+Your may have an new idea in one of these areas,
+for instance an amazing idea of a new induction principle.
+This tool enables you to try it out with the existing
+infrastructure of a state-of-the-art inductive theorem prover.
+
+We have boiled down our knowledge from
+writing HipSpec, which connects Haskell, our theory exploration tool QuickSpec
+and SMT and FO theorem provers.  With this work, we modularize it and
+make it accessible for the community.
+
 We have observed a new growth in interest in automated inductive theorem proving,
 with support in dedicated and general theorem provers and assistants
 such as Zeno, HipSpec, Hipster, CVC4, Pirate, Dafny, and the Graphsc.
@@ -151,10 +176,10 @@ Implemented:
 * Elimination of dead code (partially implemented)
 * Bool to if
 * If to bool
+* Monomorphisation
 
 Not yet implemented:
 
-* Monomorphisation
 * Induction
 * Case lifting (could show that we can use Waldmeister)
 * Axiomatizations of theories
