@@ -10,7 +10,7 @@
 ;        (= (map (lambda ((x a)) (@ f (@ g x))) xs)
 ;           (map f (map g xs))))))
 (assert-not
-  (par (a b c)
+  (par (a)
     (forall ((xs (list a)))
        (= xs (map (lambda ((x a)) x) xs)))))
 (check-sat)

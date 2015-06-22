@@ -1,5 +1,5 @@
 ---
-title: TIP Tools
+title: TIP Tools for Inductive Theorem Provers
 abstract: We show our new toolbox for inductive theorem provers and benchmarks.
 ---
 
@@ -26,15 +26,15 @@ This tool enables you to try it out with the existing
 infrastructure of a state-of-the-art inductive theorem prover.
 
 We have boiled down our knowledge from
-writing HipSpec, which connects Haskell, our theory exploration tool QuickSpec
+writing HipSpec [@hipspecCADE], which connects Haskell, our theory exploration tool QuickSpec [@quickspec]
 and SMT and FO theorem provers.  With this work, we modularize it and
 make it accessible for the community.
 
 We have observed a new growth in interest in automated inductive theorem proving,
 with support in dedicated and general theorem provers and assistants
-such as Zeno, HipSpec, Hipster, CVC4, Pirate, Dafny, and the Graphsc.
+such as Zeno [@zeno], HipSpec [@hipspecCADE], Hipster [@hipster], CVC4 [@cvc4], Pirate [@SPASSInduction], Dafny [@dafny], and the Graphsc [@graphsc].
 Spurred by this we started collecting benchmarks to be able to compare and
-evaluate theorem provers (in earlier work TIP). At the time of writing, we
+evaluate theorem provers (in earlier work [@TIP-benchmarks]). At the time of writing, we
 have 351 benchmarks.
 
 So then two different goals:
@@ -47,8 +47,8 @@ We identify a core of what the different theorem provers use and need.
 
 Furthermore, our library contains many ingredients important for inductive
 theorem proving, for instance theory exploration. We show how to use
-the current infrastructure to connect the induction mode in CVC4 with
-QuickSpec2, in a bash script! (Add induction tactic to tip to use
+the current infrastructure to connect the induction mode in CVC4 [@cvc4] with
+QuickSpec2 [@quickspec], in a bash script! (Add induction tactic to tip to use
 a theorem prover without induction
 (Z3 or with monotonox allows us to use E or vampire...)
 this is the essence of HipSpec, of course)
@@ -163,40 +163,123 @@ Not implemented: tuples to get right arity of QuickSpec functions
 
 # Passes
 
-Implemented:
+## Uncurrying the theory
+
+Our Haskell frontend makes a faithful rendition of its
+curried nature: functions take one argument at a time,
+returning a new function in case there are more arguments
+coming. This makes partial application easy. When
+translating to our logic format, it gets very inefficient
+to have all the lambdas and applications around.
+This can be used for other higher-order input formats.
+To mitigate this, we have a pass that tries to
+uncurry the top-level definitions of the theory
+as much as possible.
+
+```{.tip-include}
+double-curried.smt2
+```
+
+```{.tip-include .UncurryTheory}
+double-curried.smt2
+```
+
+#### Discussion
+Currently, the pass tries to uncurry as many arguments
+as possible, but sometimes it would seem more economical
+in number of eta-expansions required to keep some
+arguments curried. In the example above, if `double`
+is only passed to a higher-order argument to
+functions like `twice`, it can be kept curried.
+Then the assertion can be expressed withot an
+eta-expansion.
+
+## Lambda lifting and axiomatization of lambdas
+
+To enable theorem provers that have no support
+for first-class functions and lambdas, we can
+defunctionalise the program and axiomatize
+the closures. The `twice`-`double` example
+above then becomes:
+
+```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas}
+double-curried.smt2
+```
+
+A new abstract sort, `fun1` has been introduced
+which stands for functions taking one argument.
+The function `apply1` applies an argument to a fun.
+
+Furthermore, the theory can be monomorphised to
+remove the polymorphism from `fun1`:
+
+```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas .Monomorphise}
+double-curried.smt2
+```
+
+## Monomorphisation
+
+We monomorphise the problem wrt to the types occurring
+in the goals (`assert-not`).
+
+Monomorphisation can fail in the case of polymorphically
+recursive functions or datatypes. A non-regular
+data types like this will not be monomorphiseable:
+
+```.tip
+(declare-datatypes (a) (irreg ((last (value a)) (more (values (irreg (irreg a))))
+```
+
+Assertions can essentially encode polymorphic properties, too.
+```
+example with concat and map, or a simpler one
+```
+
+Monomorphisation can be incomplete even when it succeeds.
+One example is where `append` is used on `list A`,
+but not on `list B`. But the proof might need a lemma
+about append on `list B`!
+
+We successfully monomorphised 350 of our 351 benchmarks;
+the failing one has an irregular data type.
+
+We could make a complete encoding of types
+using ideas from Nick's paper.
+
+## Other passes
 
 * Simplification
 * Removing newtypes
-
-* Uncurrying the theory
-    * Helpful with HO-theories
-
 * Negating conjecture
+
 * Discriminators to match
 * Match to discriminators
+  (actually we can already run Waldmeister by axiomatizing if-then-else and the discriminator functions)
+
+* Bool to if
+* If to bool
+
 * Commuting match upwards
 * Collapsing equal functions
 * Removing alias functions
-* Lambda lifting
 * Let lifting
-* Axiomatizations of lambdas
 * CSE on match
 * Elimination of dead code (partially implemented)
-* Bool to if
-* If to bool
-* Monomorphisation
 
 Not yet implemented:
 
 * Induction
-* Case lifting (could show that we can use Waldmeister)
 * Axiomatizations of theories
   (example: Int with only comparisons should be come an abstract total order)
 * Bottom-semantics a'la Haskell
+* Case only on variables and unroll defaults
+  (another way to make a theory UEQ)
 
 # Future work
 
 Future backends: Leon, Smallcheck, THF, TFF
 
 Coinduction (reference to CVC work)
+
+# References
 

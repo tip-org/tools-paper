@@ -2,6 +2,14 @@
 
 
 %\usepackage{url}
+
+\usepackage
+    [url=false,
+     isbn=false,
+     doi=false]
+    {biblatex}
+\bibliography{bibfile}
+
 \usepackage{multirow}
 \usepackage{listings}
 \usepackage{amsmath}  % for equation*
@@ -34,7 +42,6 @@ $abstract$
 
 $body$
 
-\bibliographystyle{plain}
-\bibliography{bibfile}
+\printbibliography
 
 \end{document}
