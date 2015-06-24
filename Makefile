@@ -3,7 +3,7 @@ TARGETS=paper.pdf
 all: $(TARGETS)
 
 clean:
-	rm -f $(TARGETS)
+	rm -f $(TARGETS) paper.tex
 
 .PHONY: all clean
 
