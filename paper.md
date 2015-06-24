@@ -5,60 +5,88 @@ abstract: We show our new toolbox for inductive theorem provers and benchmarks.
 
 # Introduction
 
-When you make an inductive theorem prover, there are lots of stuff
-to take into consideration, like:
-
-* lambdas and higher-order functions
-* polymorphism
-* a nice frontend! (not to be neglected.)
-* benchmarks
-* connecting to an underlying prover (SMT rewriting or FO)
-* LEMMA DISCOVERY
-* falsifying conjectured lemmas,
-  which is usually not the focus of an inductive prover,
-  so you don't end up spending time on proving non-theorems
-  (hbmc/quickcheck)
-* instantiating induction schemas
-
-Your may have an new idea in one of these areas,
-for instance an amazing idea of a new induction principle.
-This tool enables you to try it out with the existing
-infrastructure of a state-of-the-art inductive theorem prover.
-
-We have boiled down our knowledge from
-writing HipSpec [@hipspecCADE], which connects Haskell, our theory exploration tool QuickSpec [@quickspec]
-and SMT and FO theorem provers.  With this work, we modularize it and
-make it accessible for the community.
-
-We have observed a new growth in interest in automated inductive theorem proving,
-with support in dedicated and general theorem provers and assistants
-such as Zeno [@zeno], HipSpec [@hipspecCADE], Hipster [@hipster], CVC4 [@cvc4], Pirate [@SPASSInduction], Dafny [@dafny], and the Graphsc [@graphsc].
-Spurred by this we started collecting benchmarks to be able to compare and
-evaluate theorem provers (in earlier work [@TIP-benchmarks]). At the time of writing, we
+We have observed a new growth in interest in automated inductive theorem
+proving, with support in dedicated and general theorem provers and assistants
+such as Zeno [@zeno], HipSpec [@hipspecCADE], Hipster [@hipster], CVC4 [@cvc4],
+Pirate [@SPASSInduction], Dafny [@dafny], and the Graphsc [@graphsc].  Spurred
+by this we started collecting benchmarks to be able to compare and evaluate
+theorem provers (in earlier work [@TIP-benchmarks]). At the time of writing, we
 have 351 benchmarks.
-
-So then two different goals:
-
-* To encourage people to write their own provers (based on our API or command-line tools or whatever)
-* To ease interopability with existing (and future provers) that want to use their own format.
 
 However, they don't support the same formats.
 We identify a core of what the different theorem provers use and need.
 
-Furthermore, our library contains many ingredients important for inductive
-theorem proving, for instance theory exploration. We show how to use
-the current infrastructure to connect the induction mode in CVC4 [@cvc4] with
+This paper accompanies the test suite and is an exciting tool on its own.
+
+In comparison to Why3 [@boogie11why3],
+* not an own format: uses smtlib with small extensions
+* light weight:
+    * no enforced termination check on fucntion definitions
+    * no module system
+* low-overhead encodings to underlying theorem provers (comparisons?)
+We can work in harmony together with Why3, and to that end we
+have a why3 output mode to be able to tap into
+the resources provided by them.
+Using Why3 (WhyML?) as an input format is considered, or adding our
+extension to smtlib as an output to Why3.
+
+With this work we want to work on closing the gap on the inductive theorem
+proving part that is open even in the precense of work like Why3.
+Outstanding differences to Why3:
+* a more light-weight monomorphisation pass
+* haskell frontend
+* no termination check
+* quickspec support
+* low-level format suitable for expressing benchmarks
+* todos^[induction passes, partiality semantics]
+
+We have boiled down our knowledge from writing HipSpec [@hipspecCADE], which
+connects Haskell, our theory exploration tool QuickSpec [@quickspec] and SMT
+and FO theorem provers.  With this work, we modularize it and make it
+accessible for the community.
+
+Your may have an new idea in one of these areas, for instance an amazing idea
+of a new induction principle.  This tool enables you to try it out with the
+existing infrastructure of a state-of-the-art inductive theorem prover.
+Because, when you make an inductive theorem prover, there are lots of stuff
+to take into consideration and deal with, including:
+
+* lambdas and higher-order functions,
+* polymorphism,
+* a frontend to be able to type in problems,
+* benchmarks,
+* connecting to an underlying SMT or FO prover,
+* lemma discovery,
+* falsifying conjectures^[which is usually not the focus of an inductive
+  prover, so you don't end up spending time on proving non-theorems
+  (hbmc/quickcheck)],
+* instantiating induction schemas
+
+Our library contains many ingredients important for inductive
+theorem proving, for instance theory exploration. We show how to use the
+current infrastructure to connect the induction mode in CVC4 [@cvc4] with
 QuickSpec2 [@quickspec], in a bash script! (Add induction tactic to tip to use
-a theorem prover without induction
-(Z3 or with monotonox allows us to use E or vampire...)
-this is the essence of HipSpec, of course)
+a theorem prover without induction (Z3 or with monotonox allows us to use E or
+vampire...) this is the essence of HipSpec, of course)
+
+This work has two different goals:
+
+* To encourage people to write their own provers (based on our API or command-line tools or whatever)
+* To ease interopability with existing (and future provers) that want to use their own format.
 
 Maybe some example property right here: side by side comparison
 of format supported by CVC4 and SMTInd.
 
+## Random example
+
+In our format
+
 ```{.tip-include }
 example.smt2
 ```
+
+After monomorphisation, lambda lifting, match to if-then-else and axiomatization of function
+declarations:
 
 ```{.tip-include
     .TypeSkolemConjecture .Monomorphise .LambdaLift
