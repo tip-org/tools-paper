@@ -6,9 +6,11 @@ import Text.Pandoc
 import Tip.Core
 import Tip.Parser
 import Tip.Passes
+import Tip.Lint
 import qualified Tip.Pretty.SMT as SMT
 import qualified Tip.Pretty.Why3 as Why3
 import Control.Monad
+import Text.PrettyPrint(Doc)
 
 transform :: Block -> IO Block
 transform (CodeBlock (name, ("tip":classes), attrs) expr) =
@@ -25,10 +27,13 @@ tipBlock name classes attrs expr =
   case parse expr of
     Left err -> CodeBlock (name, [], attrs) err
     Right thy ->
-      CodeBlock (name, [], attrs) (mode modes (foldr (.) id (map pass passes) thy))
+      CodeBlock (name, [], attrs) $
+      case foldl (>>=) (lintEither "parse" thy) (map pass passes) of
+        Left doc -> show doc
+        Right thy' -> mode modes thy'
   where
     (modes, passes) = go classes [] []
-    go [] modes passes = (reverse modes, passes)
+    go [] modes passes = (reverse modes, reverse passes)
     go ("no-datatypes":xs) modes passes = go xs (NoData:modes) passes
     go ("no-check-sat":xs) modes passes = go xs (NoCheckSat:modes) passes
     go ("no-functions":xs) modes passes = go xs (NoFuns:modes) passes
@@ -42,8 +47,8 @@ tipBlock name classes attrs expr =
 
 data Mode = NoData | NoProp | NoFuns | NoCheckSat | Why3 deriving (Show, Eq)
 
-pass :: StandardPass -> Theory Id -> Theory Id
-pass p = freshPass (runPass p)
+pass :: StandardPass -> Theory Id -> Either Doc (Theory Id)
+pass p = lintEither (show p) . freshPass (runPass p)
 
 mode :: [Mode] -> Theory Id -> String
 mode ms thy@Theory{..}
