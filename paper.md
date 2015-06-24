@@ -19,11 +19,13 @@ We identify a core of what the different theorem provers use and need.
 This paper accompanies the test suite and is an exciting tool on its own.
 
 In comparison to Why3 [@boogie11why3],
+
 * not an own format: uses smtlib with small extensions
 * light weight:
     * no enforced termination check on fucntion definitions
     * no module system
 * low-overhead encodings to underlying theorem provers (comparisons?)
+
 We can work in harmony together with Why3, and to that end we
 have a why3 output mode to be able to tap into
 the resources provided by them.
@@ -33,6 +35,7 @@ extension to smtlib as an output to Why3.
 With this work we want to work on closing the gap on the inductive theorem
 proving part that is open even in the precense of work like Why3.
 Outstanding differences to Why3:
+
 * a more light-weight monomorphisation pass
 * haskell frontend
 * no termination check
