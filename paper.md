@@ -148,7 +148,7 @@ example.smt2
   from new insights in the existing infrastructure to be able
   to evaluate it quickly.
 
-# The format
+# (the format)
 
 Rather than developing an own format from scratch,
 we use the already designed SMT-LIB format, which
@@ -210,7 +210,7 @@ Sketches how to do other formats:
 
 * to THF, we use the TFF1 format, but we add induction "schema" for data types.
 
-## Semantics
+## (semantics)
 
 Function declarations are given the semantics as their non-computable axiomatisation.
 
@@ -223,26 +223,6 @@ We can support these semantics:
 
 * Haskell by lifting every value to be effectively a maybe type
   (todo)
-
-# Other tools
-
-## Theory exploration by QuickSpec
-
-`tip-spec`
-
-Blanchettification for uninterpreted functions (also discussed in Hipster article)
-
-Allows theorem provers to use QuickSpec theory exploration in their tools
-
-^[Not implemented: tuples to get right arity of QuickSpec functions
-                 (needs a tuple constructor with size 0)]
-
-
-## Counterexamples to non-theorems by QuickCheck and HBMC
-
-`tip-qc`
-
-`hbmc`
 
 # Passes
 
@@ -359,6 +339,26 @@ Not yet implemented:
 * Bottom-semantics a'la Haskell
 * Case only on variables and unroll defaults
   (another way to make a theory UEQ)
+
+# All the tools
+
+## Theory exploration by QuickSpec
+
+`tip-spec`
+
+Blanchettification for uninterpreted functions (also discussed in Hipster article)
+
+Allows theorem provers to use QuickSpec theory exploration in their tools
+
+^[Not implemented: tuples to get right arity of QuickSpec functions
+                 (needs a tuple constructor with size 0)]
+
+
+## Counterexamples to non-theorems by QuickCheck and HBMC
+
+`tip-qc`
+
+`hbmc`
 
 # Case study: Rudimentophocles
 
