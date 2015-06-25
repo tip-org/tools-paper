@@ -122,52 +122,65 @@ example.smt2
 
 # The format
 
+Rather than developing an own format from scratch,
+we use the already designed SMT-LIB format, which
+is already supported by most SMT provers.
+
+We use
+
+* Datatypes, including match-expressions (in the 2.6 draft)
+* Recursive function definitions (from 2.5).
+  Although this can seem to only matter for some provers,
+  this is actually more universal:
+  for instance it can help in selecting the trigger
+  or orienting the equation
+  (typically left-to-right for function definitions).
+
+Our own additions are:
+
+* Polymorphic function definitions and assertions (asserts are for inclusion to CVC4)
+* Higher-order function and lambda functions (our own syntax)
+* Assert-not to be able to identify what the goal is.
+  This corresponds to `goal` in Why3.
+  In fact, the CVC4 induction mode needs to know which quantifier
+  to do induction on: it cannot be skolemized by hand. So an
+  `assert-not` makes sense in their work, too.
+
+SMT-LIB is extensible through theories. Currently,
+the only theory we use in the benchmarks are
+Integers, but when the need arises, this can be
+extended to bit vectors, arrays, sets, reals, floats, and so on,
+as described by the SMT-LIB theories.
+
 Side-by-side comparison of SMT-LIB and our format,
-to discuss the different additions.
+to discuss the different additions. (with other formats)
 
-(with other formats)
+## Translation to other formats
 
-For the different output formats:
+* To vanilla SMT (for provers like CVC4 and Z3),
+  We remove our own additions: HOFs, assert-not, (parametric definitions) (function definitions).
 
-For CVC4, we remove all non-SMT-LIB stuff:
-    HOFs, assert-not, (parametric definitions) (function definitions)
+* To Isabelle, case is replaced with left-hand-side match
 
-For Isabelle, we replace case with left-hand-side match
+* To Haskell, we replace non-computable parts with uninterpreted functions.
+  ^[We could also support translating equality by
+    maintaining a set of functions that have an Eq constraint
+    we start off by the only function being equals.
+    when you look for functions that call functions that have
+    an eq constraint then it gets an eq constraint added.
+    then you repeat until you get a fixpoint.]
 
-For Haskell, we replace non-computable parts with uninterpreted functions
-    -- Equality:
-        maintain a set of functions that have an Eq constraint
-        we start off by the only function being equals.
-        when you look for functions that call functions that have
-        an eq constraint then it gets an eq constraint added.
-        then you repeat until you get a fixpoint.
+Sketches how to do other formats:
 
-`tip-spec`... `tip-qc`/`hbmc`
+* to TFF1 (Typed first-order logic with rank1 types)
+  Axiomatize data types and function definitions
+  (the latter can be different ways: either recover pattern matching
+  on left-hand-sides, or use discriminators and projections.)
 
-For TFF1, we axiomatize data types and function definitions
-    (the latter can be done in two different ways)
+* to FOF, First-order logic (unityped), we use Monotonox.
+  (but what about the booleans?! one solution: FOOL)
 
-For FOF, we use Monotonox (but what about the booleans?!)
-
-For THF, we add induction "schema" for data types.
-
-# Language design
-
-Starting from SMT-LIB, we already have much of what is needed:
-
-* Asserts
-* Data-types (unofficial, but still widely adopted)
-* Integers (all in all, UFNIA can be reached through our benchmarks)
-* Function declarations
-
-Added by others:
-
-* polymorphic asserts
-
-We added:
-
-* polymorphic declarations
-* higher-order functions
+* to THF, we use the TFF1 format, but we add induction "schema" for data types.
 
 ## Semantics
 
@@ -183,14 +196,25 @@ We can support these semantics:
 * Haskell by lifting every value to be effectively a maybe type
   (todo)
 
-# QuickSpec
+# Other tools
+
+## Theory exploration by QuickSpec
+
+`tip-spec`
 
 Blanchettification for uninterpreted functions (also discussed in Hipster article)
 
 Allows theorem provers to use QuickSpec theory exploration in their tools
 
-Not implemented: tuples to get right arity of QuickSpec functions
-                 (needs a tuple constructor with size 0)
+^[Not implemented: tuples to get right arity of QuickSpec functions
+                 (needs a tuple constructor with size 0)]
+
+
+## Counterexamples to non-theorems by QuickCheck and HBMC
+
+`tip-qc`
+
+`hbmc`
 
 # Passes
 
@@ -257,8 +281,10 @@ Monomorphisation can fail in the case of polymorphically
 recursive functions or datatypes. A non-regular
 data types like this will not be monomorphiseable:
 
-```.tip
-(declare-datatypes (a) (irreg ((last (value a)) (more (values (irreg (irreg a))))
+```{.tip .no-check-sat}
+(declare-datatypes
+  (a) ((irreg (last (value a)) (more (values (irreg (irreg a)))))))
+(check-sat)
 ```
 
 Assertions can essentially encode polymorphic properties, too.
