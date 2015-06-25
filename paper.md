@@ -1,17 +1,45 @@
 ---
-title: TIP Tools for Inductive Theorem Provers
-abstract: We show our new toolbox for inductive theorem provers and benchmarks.
+abstract: We show our new toolbox for inductive theorem provers and benchmarks. Encourage development of provers etc.
 ---
 
 # Introduction
 
-We have observed a new growth in interest in automated inductive theorem
-proving, with support in dedicated and general theorem provers and assistants
-such as Zeno [@zeno], HipSpec [@hipspecCADE], Hipster [@hipster], CVC4 [@cvc4],
-Pirate [@SPASSInduction], Dafny [@dafny], and the Graphsc [@graphsc].  Spurred
+More and more people are making inductive theorem provers.
+Besides dedicated inductive provers such as Zeno [@zeno], HipSpec
+[@hipspecCADE], Hipster [@hipster], Pirate [@SPASSInduction] and
+Graphsc [@graphsc], more general provers such as CVC4 [@cvc4] and
+Dafny [@dafny] now do automatic induction.
+
+These tools have little in common besides inductive data types.
+Some support polymorphic types, some don't; some understand
+higher-order functions, some don't; and every one of the tools above
+reads a different input format.
+
+Recently we introduced a suite of inductive benchmarks [@TIP-benchmarks],
+which currently stands at 343 problems.
+
+lot of extra gunk besides inductive data types - polymorphism etc
+wide diversity - all they share is inductive data types
+
+
+
+
+All these tools use different input formats, and not all of them
+support the same features. For example, some support higher-order
+functions or polymorphism, others don't.
+
+It is difficult to compare all these provers because they support
+different logics. For example, some support higher-order functions
+while others are first-order; some
+
+To scientifically compare these provers we needed a standard benchmark
+suite, and in [@TIP-benchmarks] we collected 343 benchmarks etc etc
+etc
+
+Spurred
 by this we started collecting benchmarks to be able to compare and evaluate
 theorem provers (in earlier work [@TIP-benchmarks]). At the time of writing, we
-have 351 benchmarks.
+have 343 benchmarks.
 
 However, they don't support the same formats.
 We identify a core of what the different theorem provers use and need.
@@ -331,6 +359,16 @@ Not yet implemented:
 * Bottom-semantics a'la Haskell
 * Case only on variables and unroll defaults
   (another way to make a theory UEQ)
+
+# Case study: Rudimentophocles
+
+(where should this go?)
+
+Rudimentophocles^[Named after the lesser-known Greek philosopher.] is
+a basic inductive theorem prover with lemma discovery written in shell
+script. It uses CVC4 to do the induction, QuickSpec to do the lemma
+discovery and TIP to connect the two. It is not intended as a real
+theorem prover, but rather a demonstration of what TIP can do.
 
 # Future work
 

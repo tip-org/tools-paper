@@ -11,7 +11,7 @@ TEMPLATE=latex.template
 BIBFILE=bibfile.bib
 FILTER=./Filter.hs
 
-%.tex: %.md $(TEMPLATE) $(BIBFILE) $(FILTER) *smt2
+%.tex: %.md $(TEMPLATE) $(BIBFILE) $(FILTER) $(glob *.smt2)
 	pandoc $< -o $@ --template $(TEMPLATE) --standalone --filter $(FILTER) --bibliography $(BIBFILE) --biblatex
 
 paper.pdf: paper.tex
