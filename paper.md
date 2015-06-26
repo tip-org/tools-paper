@@ -4,19 +4,19 @@ abstract: We show our new toolbox for inductive theorem provers and benchmarks. 
 
 # Introduction
 
-More and more people are making inductive theorem provers.
-Besides dedicated inductive provers such as Zeno [@zeno], HipSpec
-[@hipspecCADE], Hipster [@hipster], Pirate [@SPASSInduction] and
-Graphsc [@graphsc], more general provers such as CVC4 [@cvc4] and
-Dafny [@dafny] now do automatic induction.
-
-These tools have little in common besides inductive data types.
-Some support polymorphic types, some don't; some understand
-higher-order functions, some don't; and every one of the tools above
-reads a different input format.
-
-Recently we introduced a suite of inductive benchmarks [@TIP-benchmarks],
+More and more people are making inductive theorem provers. As well as
+new provers such as Zeno [@zeno], HipSpec [@hipspecCADE], Hipster
+[@hipster], Pirate [@SPASSInduction] and Graphsc [@graphsc], existing
+provers such as CVC4 [@cvc4] and Dafny [@dafny] can now do induction.
+Spurred on by the new interest in inductive theorem proving, we
+recently introduced a suite of inductive benchmarks [@TIP-benchmarks],
 which currently stands at 343 problems.
+
+These provers vary widely in what they can do: about the only thing
+they have in common is inductive data types. Some support polymorphic
+types, some don't; some understand higher-order functions, some don't;
+some work on programs, others on logical formulas; and every one of
+the tools above reads a different input format.
 
 lot of extra gunk besides inductive data types - polymorphism etc
 wide diversity - all they share is inductive data types
