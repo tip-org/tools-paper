@@ -12,34 +12,16 @@ Spurred on by the new interest in inductive theorem proving, we
 recently introduced a suite of inductive benchmarks [@TIP-benchmarks],
 which currently stands at 343 problems.
 
-These provers vary widely in what they can do: about the only thing
-they have in common is inductive data types. Some support polymorphic
-types, some don't; some understand higher-order functions, some don't;
-some work on programs, others on logical formulas; and every one of
-the tools above reads a different input format.
+Inductive provers vary widely: some support polymorphic types, some
+don't; some understand higher-order functions, some don't; some reason
+about programs, some about logical formulas.
+
+
+; and every one of the
+tools above reads a different input format.
 
 lot of extra gunk besides inductive data types - polymorphism etc
 wide diversity - all they share is inductive data types
-
-
-
-
-All these tools use different input formats, and not all of them
-support the same features. For example, some support higher-order
-functions or polymorphism, others don't.
-
-It is difficult to compare all these provers because they support
-different logics. For example, some support higher-order functions
-while others are first-order; some
-
-To scientifically compare these provers we needed a standard benchmark
-suite, and in [@TIP-benchmarks] we collected 343 benchmarks etc etc
-etc
-
-Spurred
-by this we started collecting benchmarks to be able to compare and evaluate
-theorem provers (in earlier work [@TIP-benchmarks]). At the time of writing, we
-have 343 benchmarks.
 
 However, they don't support the same formats.
 We identify a core of what the different theorem provers use and need.
