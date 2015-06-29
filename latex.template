@@ -20,6 +20,11 @@
 \usepackage[pdfborder={0 0 0}]{hyperref}
 \usepackage{tabularx}
 \usepackage{inconsolata}
+\usepackage{listings}
+$if(highlighting-macros)$
+$highlighting-macros$
+$endif$
+
 
 
 \begin{document}

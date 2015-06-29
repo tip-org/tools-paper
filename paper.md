@@ -358,5 +358,74 @@ Future backends: Leon, Smallcheck, THF, TFF
 
 Coinduction (reference to CVC work)
 
-# References
+\appendix
 
+# Rudimentophocles
+
+``` {.bash}
+#!/bin/bash
+
+# Run the input file through QuickSpec.
+# Discovered lemmas get added as new goals.
+IFS=' '
+file=$(tip-spec $1 | grep -A1000000 '^(declare-')
+
+# Read a problem from stdin and try to prove as many goals as possible.
+# Takes a single parameter, which is the timeout to give to CVC4.
+prove() {
+  file=$(cat)
+
+  progress= # Set to yes if we manage to prove some goal.
+  n=0       # The index of the goal we're trying to prove now.
+
+  while true; do
+    # Check that n isn't out of bounds.
+    if echo $file|tip --select-conjecture $n >& /dev/null; then
+      # Make a theory where goal n is the only goal.
+      goal=$(echo $file|tip --select-conjecture $n --smtlib)
+      # Can we prove it without induction?
+      result=$((echo '(set-logic ALL_SUPPORTED)'; echo $goal) |
+               cvc4 --lang smt2.5 --tlimit=100)
+      if [[ $result = unsat ]]; then
+        # Proved without induction - delete the goal.
+        echo -n ':D ' >&2
+        file=$(echo $file|tip --delete-conjecture $n)
+        progress=yes
+      else
+        # Can we prove the goal with induction?
+        result=$((echo '(set-logic ALL_SUPPORTED)'; echo $goal) |
+                 cvc4 --lang smt2.5 --tlimit=$1 --quant-ind)
+        if [[ $result = unsat ]]; then
+          # Proved with induction - change the goal into a lemma.
+          echo -n ':) ' >&2
+          file=$(echo $file|tip --proved-conjecture $n)
+          progress=yes
+        else
+          # Failed to prove the goal - try the next one.
+          echo -n ':( ' >&2
+          ((n=$n+1))
+        fi
+      fi
+    else
+      # We've tried all goals - if we failed to prove any,
+      # then stop, otherwise go round again.
+      echo >&2
+      if [[ -z $progress ]]; then break; fi
+      progress=
+      n=0
+    fi
+  done
+
+  # Print out the final theory.
+  echo $file
+}
+
+# Run the proof loop, gradually increasing the timeout.
+for i in 100 400 1000; do
+  file=$(echo $file | prove $i)
+done
+
+# Print the final theory out as WhyML so that it's easy to read.
+echo
+echo $file | tip --why
+```
