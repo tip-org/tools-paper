@@ -1,17 +1,27 @@
 ---
-title: TIP Tools for Inductive Theorem Provers
-abstract: We show our new toolbox for inductive theorem provers and benchmarks.
+abstract: We show our new toolbox for inductive theorem provers and benchmarks. Encourage development of provers etc.
 ---
 
 # Introduction
 
-We have observed a new growth in interest in automated inductive theorem
-proving, with support in dedicated and general theorem provers and assistants
-such as Zeno [@zeno], HipSpec [@hipspecCADE], Hipster [@hipster], CVC4 [@cvc4],
-Pirate [@SPASSInduction], Dafny [@dafny], and the Graphsc [@graphsc].  Spurred
-by this we started collecting benchmarks to be able to compare and evaluate
-theorem provers (in earlier work [@TIP-benchmarks]). At the time of writing, we
-have 351 benchmarks.
+More and more people are making inductive theorem provers. As well as
+new provers such as Zeno [@zeno], HipSpec [@hipspecCADE], Hipster
+[@hipster], Pirate [@SPASSInduction] and Graphsc [@graphsc], existing
+provers such as CVC4 [@cvc4] and Dafny [@dafny] can now do induction.
+Spurred on by the new interest in inductive theorem proving, we
+recently introduced a suite of inductive benchmarks [@TIP-benchmarks],
+which currently stands at 343 problems.
+
+Inductive provers vary widely: some support polymorphic types, some
+don't; some understand higher-order functions, some don't; some reason
+about programs, some about logical formulas.
+
+
+; and every one of the
+tools above reads a different input format.
+
+lot of extra gunk besides inductive data types - polymorphism etc
+wide diversity - all they share is inductive data types
 
 However, they don't support the same formats.
 We identify a core of what the different theorem provers use and need.
@@ -120,7 +130,7 @@ example.smt2
   from new insights in the existing infrastructure to be able
   to evaluate it quickly.
 
-# The format
+# (the format)
 
 Rather than developing an own format from scratch,
 we use the already designed SMT-LIB format, which
@@ -185,7 +195,7 @@ Sketches how to do other formats:
 
 * to THF, we use the TFF1 format, but we add induction "schema" for data types.
 
-## Semantics
+## (semantics)
 
 Function declarations are given the semantics as their non-computable axiomatisation.
 
@@ -198,26 +208,6 @@ We can support these semantics:
 
 * Haskell by lifting every value to be effectively a maybe type
   (todo)
-
-# Other tools
-
-## Theory exploration by QuickSpec
-
-`tip-spec`
-
-Blanchettification for uninterpreted functions (also discussed in Hipster article)
-
-Allows theorem provers to use QuickSpec theory exploration in their tools
-
-^[Not implemented: tuples to get right arity of QuickSpec functions
-                 (needs a tuple constructor with size 0)]
-
-
-## Counterexamples to non-theorems by QuickCheck and HBMC
-
-`tip-qc`
-
-`hbmc`
 
 # Passes
 
@@ -362,6 +352,36 @@ Not yet implemented:
 * Bottom-semantics a'la Haskell
 * Case only on variables and unroll defaults
   (another way to make a theory UEQ)
+
+# All the tools
+
+## Theory exploration by QuickSpec
+
+`tip-spec`
+
+Blanchettification for uninterpreted functions (also discussed in Hipster article)
+
+Allows theorem provers to use QuickSpec theory exploration in their tools
+
+^[Not implemented: tuples to get right arity of QuickSpec functions
+                 (needs a tuple constructor with size 0)]
+
+
+## Counterexamples to non-theorems by QuickCheck and HBMC
+
+`tip-qc`
+
+`hbmc`
+
+# Case study: Rudimentophocles
+
+(where should this go?)
+
+Rudimentophocles^[Named after the lesser-known Greek philosopher.] is
+a basic inductive theorem prover with lemma discovery written in shell
+script. It uses CVC4 to do the induction, QuickSpec to do the lemma
+discovery and TIP to connect the two. It is not intended as a real
+theorem prover, but rather a demonstration of what TIP can do.
 
 # Future work
 
