@@ -134,7 +134,10 @@ We use
   this is actually more universal:
   for instance it can help in selecting the trigger
   or orienting the equation
-  (typically left-to-right for function definitions).
+  (typically left-to-right for function definitions),
+  and as we will see later in the monomorphisation section^[add fwd reference],
+  that it helps also there.
+
 
 Our own additions are:
 
@@ -274,34 +277,62 @@ double-curried.smt2
 
 ## Monomorphisation
 
-We monomorphise the problem wrt to the types occurring
-in the goals (`assert-not`).
+Oftentimes, the natural way to express functional programs is by using
+polymorphism. One example is this `zip`-`rev` property, which
+is conjecture 85 obtained from the isaplanner testsuite:
 
-Monomorphisation can fail in the case of polymorphically
-recursive functions or datatypes. A non-regular
-data types like this will not be monomorphiseable:
-
-```{.tip .no-check-sat}
-(declare-datatypes
-  (a) ((irreg (last (value a)) (more (values (irreg (irreg a)))))))
-(check-sat)
+```{.tip-include .no-check-sat .no-functions .no-datatypes}
+prop_85.smt2
 ```
 
-Assertions can essentially encode polymorphic properties, too.
+Here, `rev` is used both on lists of `a` and `b`, but also
+on pairs of `a` and `b`.
+
+```{.tip-include .no-check-sat .no-functions .TypeSkolemConjecture .Monomorphise}
+prop_85.smt2
 ```
-example with concat and map, or a simpler one
-```
+
+
+As shown in [@BobotPaskevich2011frocos], calculating
+the set of reachable ground instances for a polymorphic problem
+is undecidable, and their construction can be made in our setting.
+
+Futhermore, the set is infinite for many problems due to polymorphic recursion,
+either in datatype declarations or in function definitions. But assertions can
+enforce polymorphic recursion, too. As an example, assume the zip-rev
+conjecture above is asserted as a lemma.  Then say some ground type is used in
+the program, like `(list Int)`. Then the lemma suggests that `(list (Pair Int Int))` is used too, by instantiating the lemma with the type substitution `a`
+and `b` both replaced with `Int`.  Now, this yields another instatiation of
+`(list (Pair Int (Pair Int Int)))`, and so on.
+
+For the benchmark suite, this has not yet posed any problems
+since they don't contain any lemmas: the assumption is that
+the provers will figure these out by themselves from the
+function definitions. ^[FIX THIS: But even though our tool then
+can claim it succeeds to monomoprhise the problem,
+the proof can require a lemma oncerning
+a function whose monomorphic instance
+was not used. In the `zip`-`rev`-example above,
+the length function `len` is not used on list of pairs,
+so there will be no copy of it instantiated at that type.
+If a (hypothetical) proof requires a lemma about the
+`len` on pairs function, that function now needs to
+be synthesised by the prover in the monomorphised problem.
 
 Monomorphisation can be incomplete even when it succeeds.
 One example is where `append` is used on `list A`,
 but not on `list B`. But the proof might need a lemma
-about append on `list B`!
+about append on `list B`!]
+
+
+We monomorphise the problem wrt to the types occurring
+in the goals (`assert-not`).
 
 We successfully monomorphised 350 of our 351 benchmarks;
 the failing one has an irregular data type.
 
-We could make a complete encoding of types
-using ideas from Nick's paper.
+We could make a complete encoding of types using ideas from Nick's paper
+[@blanchette2013encoding].
 
 ## Other passes
 

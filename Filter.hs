@@ -63,7 +63,7 @@ mode ms thy@Theory{..}
       thy {
         thy_datatypes = checking NoData thy_datatypes,
         thy_funcs = checking NoFuns thy_funcs,
-        thy_asserts = checking NoFuns thy_asserts }
+        thy_asserts = checking NoProp thy_asserts }
     checking x xs
       | x `elem` ms = []
       | otherwise = xs
