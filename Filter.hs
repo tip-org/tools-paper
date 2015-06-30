@@ -34,10 +34,12 @@ tipBlock name classes attrs expr =
   where
     (modes, passes) = go classes [] []
     go [] modes passes = (reverse modes, reverse passes)
-    go ("no-datatypes":xs) modes passes = go xs (NoData:modes) passes
+    go ("no-datatypes":xs) modes passes = go xs (NoDatas:modes) passes
     go ("no-check-sat":xs) modes passes = go xs (NoCheckSat:modes) passes
     go ("no-functions":xs) modes passes = go xs (NoFuns:modes) passes
-    go ("no-properties":xs) modes passes = go xs (NoProp:modes) passes
+    go ("no-properties":xs) modes passes = go xs (NoProps:modes) passes
+    go ("no-sigs":xs) modes passes = go xs (NoSigs:modes) passes
+    go ("no-sorts":xs) modes passes = go xs (NoSorts:modes) passes
     go ("why3":xs) modes passes = go xs (Why3:modes) passes
     go (x:xs) modes passes =
       case reads x of
@@ -45,7 +47,7 @@ tipBlock name classes attrs expr =
         _ -> error ("Unknown pass " ++ x)
         -- Todo: use opt-parse-applicative
 
-data Mode = NoData | NoProp | NoFuns | NoCheckSat | Why3 deriving (Show, Eq)
+data Mode = NoDatas | NoProps | NoFuns | NoSigs | NoSorts | NoCheckSat | Why3 deriving (Show, Eq)
 
 pass :: StandardPass -> Theory Id -> Either Doc (Theory Id)
 pass p = lintEither (show p) . freshPass (runPass p)
@@ -61,9 +63,11 @@ mode ms thy@Theory{..}
     dropRev n = reverse . drop n . reverse
     thy' =
       thy {
-        thy_datatypes = checking NoData thy_datatypes,
+        thy_sorts = checking NoSorts thy_sorts,
+        thy_sigs = checking NoSigs thy_sigs,
+        thy_datatypes = checking NoDatas thy_datatypes,
         thy_funcs = checking NoFuns thy_funcs,
-        thy_asserts = checking NoProp thy_asserts }
+        thy_asserts = checking NoProps thy_asserts }
     checking x xs
       | x `elem` ms = []
       | otherwise = xs
