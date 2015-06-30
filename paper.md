@@ -267,6 +267,14 @@ double-curried.smt2
 
 ## Monomorphisation
 
+And it is desireable to do this when the size increase is small,
+since type guards and predicates can desturb trigger selection in SMT solvers.
+An overview of type encoding for polymorphism is [@blanchette2013encoding].
+
+Even though there has been work on supporting polymorphism natively
+in FO provers and SMT solvers, in particular Alt-Ergo [@BobotAltErgo], but also
+initial work for CVC4, this is not yet standard practice.
+
 Oftentimes, the natural way to express functional programs is by using
 polymorphism. One example is this `zip`-`rev` property, which
 is conjecture 85 obtained from the isaplanner testsuite:
@@ -282,6 +290,11 @@ on pairs of `a` and `b`.
 prop_85.smt2
 ```
 
+In this work, we show how to express monomorphisation as a
+predicate horn clause problem, and how to encode things like
+growing the type universe and function universe in it.
+In particular, we show how to be complete when possible,
+and how to use heuristics when possible.
 
 As shown in [@BobotPaskevich2011frocos], calculating
 the set of reachable ground instances for a polymorphic problem
@@ -321,8 +334,22 @@ in the goals (`assert-not`).
 We successfully monomorphised 350 of our 351 benchmarks;
 the failing one has an irregular data type.
 
+#### related work
+
 We could make a complete encoding of types using ideas from Nick's paper
-[@blanchette2013encoding].
+[@blanchette2013encoding]. That article also outlines a "Finite Monomrphisation Algorithm"
+(sect 7.1), with the settings in sledgehammer. By default, the type universe
+is allowed to grow thrice, and at most 200 new formulae are allowed to be introduced.
+
+We have not yet formalized our monomorphisation, but it has been done in
+[@Li08trustedsource], though they don't support polymorphic recursion
+or formulae. Their approach is basically the one to removing polymorphism
+by cloning as in [@Olivia97fromml] in the ML setting without
+polymorphic recursion. They take extra care to do monomorphisation
+before defunctionalisation to be able to have simply typed closures.
+Our work can be seen as an extension of their approaches in the
+presence of polymorphic recursion and lemmas.
+
 
 ## Other passes
 
