@@ -4,54 +4,32 @@ abstract: We show our new toolbox for inductive theorem provers and benchmarks. 
 
 # Introduction
 
-More and more people are making inductive theorem provers. As well as
-new provers such as Zeno [@zeno], HipSpec [@hipspecCADE], Hipster
-[@hipster], Pirate [@SPASSInduction] and Graphsc [@graphsc], existing
-provers such as CVC4 [@cvc4] and Dafny [@dafny] can now do induction.
+More and more people are making inductive theorem provers. New
+inductive provers include Zeno [@zeno], HipSpec [@hipspecCADE],
+Hipster [@hipster], Pirate [@SPASSInduction] and Graphsc [@graphsc],
+while the CVC4 [@cvc4] and Dafny [@dafny] systems have gained
+induction support.
+
 Spurred on by the new interest in inductive theorem proving, we
 recently introduced a suite of inductive benchmarks [@TIP-benchmarks],
-which currently stands at 343 problems.
+which currently stands at 343 problems. The benchmarks are expressed
+in our TIP format, a rich language containing inductive datatypes,
+built-in integers, higher-order functions, polymorphism, recursive
+function definitions and first-order logic.
 
-Inductive provers vary widely: some support polymorphic types, some
-don't; some understand higher-order functions, some don't; some reason
-about programs, some about logical formulas.
+#### Translating TIP to other formats
 
+We also developed a tool to translate TIP to other formats. As very
+few inductive provers support all TIP's features, the tool's main job
+is to encode features that the prover does not support. For example,
+if a prover does not support polymorphism, the TIP tool can
+monomorphise the problem.
 
-; and every one of the
-tools above reads a different input format.
+#### TIP as a toolbox
 
-lot of extra gunk besides inductive data types - polymorphism etc
-wide diversity - all they share is inductive data types
-
-However, they don't support the same formats.
-We identify a core of what the different theorem provers use and need.
-
-This paper accompanies the test suite and is an exciting tool on its own.
-
-In comparison to Why3 [@boogie11why3],
-
-* not an own format: uses smtlib with small extensions
-* light weight:
-    * no enforced termination check on fucntion definitions
-    * no module system
-* low-overhead encodings to underlying theorem provers (comparisons?)
-
-We can work in harmony together with Why3, and to that end we
-have a why3 output mode to be able to tap into
-the resources provided by them.
-Using Why3 (WhyML?) as an input format is considered, or adding our
-extension to smtlib as an output to Why3.
-
-With this work we want to work on closing the gap on the inductive theorem
-proving part that is open even in the precense of work like Why3.
-Outstanding differences to Why3:
-
-* a more light-weight monomorphisation pass
-* haskell frontend
-* no termination check
-* quickspec support
-* low-level format suitable for expressing benchmarks
-* todos^[induction passes, partiality semantics]
+These provers vary widely: some support polymorphic types, some don't;
+some understand higher-order functions, some don't; some reason about
+programs, some about logical formulas.
 
 We have boiled down our knowledge from writing HipSpec [@hipspecCADE], which
 connects Haskell, our theory exploration tool QuickSpec [@quickspec] and SMT
@@ -86,6 +64,33 @@ This work has two different goals:
 
 * To encourage people to write their own provers (based on our API or command-line tools or whatever)
 * To ease interopability with existing (and future provers) that want to use their own format.
+This paper accompanies the test suite and is an exciting tool on its own.
+
+In comparison to Why3 [@boogie11why3],
+
+* not an own format: uses smtlib with small extensions
+* light weight:
+    * no enforced termination check on fucntion definitions
+    * no module system
+* low-overhead encodings to underlying theorem provers (comparisons?)
+
+We can work in harmony together with Why3, and to that end we
+have a why3 output mode to be able to tap into
+the resources provided by them.
+Using Why3 (WhyML?) as an input format is considered, or adding our
+extension to smtlib as an output to Why3.
+
+With this work we want to work on closing the gap on the inductive theorem
+proving part that is open even in the precense of work like Why3.
+Outstanding differences to Why3:
+
+* a more light-weight monomorphisation pass
+* haskell frontend
+* no termination check
+* quickspec support
+* low-level format suitable for expressing benchmarks
+* todos^[induction passes, partiality semantics]
+
 
 Maybe some example property right here: side by side comparison
 of format supported by CVC4 and SMTInd.
@@ -416,5 +421,76 @@ Future backends: Leon, Smallcheck, THF, TFF
 
 Coinduction (reference to CVC work)
 
-# References
+\printbibliography
 
+\appendix
+
+# Rudimentophocles
+
+``` {.bash}
+#!/bin/bash
+
+# Run the input file through QuickSpec.
+# Discovered lemmas get added as new goals.
+IFS=' '
+file=$(tip-spec $1 | grep -A1000000 '^;;')
+
+# Read a problem from stdin and try to prove as many goals as possible.
+# Takes a single parameter, which is the timeout to give to CVC4.
+prove() {
+  file=$(cat)
+
+  progress= # Set to yes if we manage to prove some goal.
+  n=0       # The index of the goal we're trying to prove now.
+
+  while true; do
+    # Check that n isn't out of bounds.
+    if echo $file|tip --select-conjecture $n >& /dev/null; then
+      # Make a theory where goal n is the only goal.
+      goal=$(echo $file|tip --select-conjecture $n --smtlib)
+      # Can we prove it without induction?
+      result=$((echo '(set-logic ALL_SUPPORTED)'; echo $goal) |
+               cvc4 --lang smt2.5 --tlimit=100)
+      if [[ $result = unsat ]]; then
+        # Proved without induction - delete the goal.
+        echo -n ':D ' >&2
+        file=$(echo $file|tip --delete-conjecture $n)
+        progress=yes
+      else
+        # Can we prove the goal with induction?
+        result=$((echo '(set-logic ALL_SUPPORTED)'; echo $goal) |
+                 cvc4 --lang smt2.5 --tlimit=$1 --quant-ind)
+        if [[ $result = unsat ]]; then
+          # Proved with induction - change the goal into a lemma.
+          echo -n ':) ' >&2
+          file=$(echo $file|tip --proved-conjecture $n)
+          progress=yes
+        else
+          # Failed to prove the goal - try the next one.
+          echo -n ':( ' >&2
+          ((n=$n+1))
+        fi
+      fi
+    else
+      # We've tried all goals - if we failed to prove any,
+      # then stop, otherwise go round again.
+      echo >&2
+      if [[ -z $progress ]]; then break; fi
+      progress=
+      n=0
+    fi
+  done
+
+  # Print out the final theory.
+  echo $file
+}
+
+# Run the proof loop, gradually increasing the timeout.
+for i in 100 400 1000; do
+  file=$(echo $file | prove $i)
+done
+
+# Print the final theory out as WhyML so that it's easy to read.
+echo
+echo $file | tip --why
+```
