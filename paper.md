@@ -89,8 +89,9 @@ Outstanding differences to Why3:
 * no termination check
 * quickspec support
 * low-level format suitable for expressing benchmarks
-* induction pass^[but doesn't why3 have this!?]
-* todos^[partiality semantics]
+* todos^[partiality semantics, induction pass: the only difference seems to be
+  that Why3 cannot do induction no the same variable many times, and that they
+  do lexicographic induction]
 
 
 Maybe some example property right here: side by side comparison
@@ -225,8 +226,10 @@ We can support these semantics:
 ## Applying structural induction
 
 We provide a transformation that applies structural induction over data types
-in the goal. This looks at the quantifier of the goal, and does induction on
-the variable at a given a position in the quantifier list.^[TODO: what does why3's induction transformation do?]
+in the goal. This requires a forall quantifier of the goal at the top, and does induction on
+the variable at a given a position in the quantifier list. ^[TODO: the only difference seems to be
+  that Why3 cannot do induction no the same variable many times, and that they
+  do lexicographic induction]
 
 This is a pass that gives a separate theory for each proof obligation yielded
 by the induction pass. When using the command line tool, the theories are put
@@ -236,9 +239,11 @@ The pass can also do induction on several variables, or repeatedly do
 induction on the same variable. There are some alternatives how strong
 induction hypotheses to add. This pass does not do the strongest, it uses
 HipSpec's heuristic and adds the strict subterms of the conclusion.
-This is predictable, symmetric and is shown to work well in practice.
-Doing induction both natural number arguments on an abstract binary predicate `p`
-looks like this in the step case:
+This is predictable, symmetric and is shown to work well in practice:
+for instance, it is strong enough to prove commutativity of the normal
+definition of natural number addition without any lemmas when doing induction
+on both variables. Induction on both of two natural number variables,
+on an abstract predicate `p` looks like this in the last of three step cases:
 
 ```{.tip .Induction-L0_1R .t3 .no-functions}
 ;.SkolemiseConjecture}
@@ -247,6 +252,10 @@ looks like this in the step case:
 (assert-not (forall ((x nat) (y nat)) (p x y)))
 (check-sat)
 ```
+
+We are adding more kinds of induction, including recursion-induction,
+Leino-induction (well-founded induction on the size of data types), and fixed
+point induction.
 
 ## Uncurrying the theory
 
@@ -279,37 +288,121 @@ functions like `twice`, it can be kept curried.
 Then the assertion can be expressed withot an
 eta-expansion.
 
-## Lambda lifting and axiomatization of lambdas
-
-To enable theorem provers that have no support
-for first-class functions and lambdas, we can
-defunctionalise the program and axiomatize
-the closures. The `twice`-`double` example
-above then becomes:
-
-```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas}
-double-curried.smt2
-```
-
-A new abstract sort, `fun1` has been introduced
-which stands for functions taking one argument.
-The function `apply1` applies an argument to a fun.
-
-Furthermore, the theory can be monomorphised to
-remove the polymorphism from `fun1`:
-
-```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas .Monomorphise}
-double-curried.smt2
-```
-
 ## Monomorphisation
 
+Oftentimes, the natural way to express functional programs is by using
+polymorphism. We support rank 1 polymorphism in our tools:
+all definitions can quantify over type variables, but only at the
+top level. However, many provers do not support polymorphism,
+or not even a monomorphic sorted logic.
+Though there has been work on supporting polymorphism natively
+in FO provers and SMT solvers, in particular Alt-Ergo [@BobotAltErgo], but also
+initial work for CVC4, this is not yet standard practice.
+Hence, we provide a pass to automatically remove monomorphism
+by cloning polymorphic definitions at ground types. At
+some problems, this procedure is not complete.
+It is possible to encode types completely, but this
+is heavier and the introduced ovehead could for instance
+desturb trigger selection in SMT solvers. ^[An overview of type encoding for polymorphism is
+[@blanchette2013encoding]. TODO: Is this the right reference?
+]
+
+In case of polymorphic recursion, where a function or a constructor
+makes a call to its parent with a bigger type, the polymorphism
+cannot be fully removed, but we can approximate the program
+by letting these definitions unroll a few times and then becoming
+opaque. This section describes how to do this.
+
+In this work, we show how to flexibly express monomorphism
+as predicate horn clauses, and then obtaining the minimal model.
+We start with the ground seeds of the types and functions
+occuring in the goal. As shown in [@BobotPaskevich2011frocos],
+calculating the set of reachable ground instances for a polymorphic problem is
+undecidable, and their construction can be made in our setting.
+To curb this, when we add a new clause to the set of
+clauses, we check if the current system terminates within 10
+parallell rewrites. If it does not, we introduce fuel arguments.
+
+The initial ground instances, the seeds, are given by the
+conjecture. To this end, we do a type-level skolemisation
+of the conjecture. So if the conjecture quantifies over
+the type `a` and mentions the function `f(a)`,
+we introduce a new abstract sort `sk_a`: and add the rule:
+
+    -> f(sk_a)
+
+which states that `f(sk_a)` is always active. This now
+enables other rules to fire.
+
+For function declarations, we simply make sure that
+they activate all their necessary dependencies.
+If a function `h` has two type variables `a` and `b`,
+and makes a call to `f` at `a` and `g` at `b` we
+add this rule:
+
+    h(a,b) -> f(a)
+    h(a,b) -> g(b)
+
+This means that we will make a copy of `h(a,b)` if
+the function `f(a)` and `g(b)` are copied.
+
+But for an inductive prover, every function definition
+is valuable. As an example, the more functions you have
+when you do theory exploration, the better you know
+how they interact. In the general case, you need to be able
+to synthesise new functions to be complete.
+To this end, we would also like to instantiate functions
+when they seem harmless. So in the example above, we would
+also like to add this rule:
+
+    f(a), g(b) -> h(a,b)
+
+We give these rules a lower priority, and add rules
+from higher to lower priority, checking termination
+by simulating 10 parallel assignment steps. If it
+does not terminate, we add _fuel arguments_:
+
+    f(Succ(n)), g(Succ(m)), min(Succ(n),Succ(m),Succ(o)) -> h(Succ(o),a,b)
+
+Where we just add instances for `min`. We have finitely much fuel anyway:
+(Say we start at fuel 3)
+
+    min(3,3,3)
+    min(3,2,2)
+    min(3,1,1)
+    ...
+    min(2,3,2)
+    ...
+
+The fuel for exciting rules can be throttled. 3 or 2 is a sensible default.
+(In the example above, we cannot just have one of `f` or `g` on the left-hand side
+as all type variables need to be mentioned. We take all minimal
+sets as left-hand sides that cover all variables).
+
+For lemmas we add one rule that says that we want a copy of it
+if all function symbols of it are active. This has a high priority.
+With lower priority, we do as outlined above for the function definitions:
+we instantiate the lemma if there is some function active, and
+as for all rules add fuels as necessary.
+
+As an example:
+Futhermore, the set is infinite for many problems due to polymorphic recursion,
+either in datatype declarations or in function definitions. But assertions can
+enforce polymorphic recursion, too. As an example, assume the zip-rev
+conjecture above is asserted as a lemma.  Then say some ground type is used in
+the program, like `(list Int)`. Then the lemma suggests that `(list (Pair Int Int))` is used too, by instantiating the lemma with the type substitution `a`
+and `b` both replaced with `Int`.  Now, this yields another instatiation of
+`(list (Pair Int (Pair Int Int)))`, and so on.
 
 
+TODO:
+* Show what to do when the fuel reaches zero.
+* Add to that an example with polymorphic recursion getting cut off.
 
+We successfully monomorphised 350 of our 351 benchmarks;
+the failing one has an irregular data type.
 
-Monomorphisation is expressible as a horn clauses in predicate logic,
-and then searching for the minimal model.
+<!--
 We have five different kinds of entries in our theories:
 anonymous sort declarations (could have type arguments),
 
@@ -369,19 +462,6 @@ reverse(a) -> reverse(a) # actually calls itself too. this rule can be pruned
 When should reverse be activated (i.e. be on the rhs of the implication)?
 Just as `reverse` activates `append`, other functions calling `reverse`
 will make `reverse` activated.
-
-But for an inductive prover, every function definition
-is valuable. As an example, the more functions you have
-when you do theory exploration, the better you know
-how they interact. In the general case, you need to be able
-to synthesise new functions to be complete.
-To this end, we would also like to instantiate functions
-when they seem harmless. Two ways to do it:
-
-* Allow instantiation as long as the type universe does not grow
-  (Potential problem: the function it calls may make it grow)
-* Instantiate when all functions not in the same SCC are
-  available.
 
 ```
 mystery_length xs = length xs + length [xs]
@@ -527,6 +607,57 @@ Or that they ALL have to be: (or two..., and so on.)
 
 ### New Text
 
+### Old Text
+
+
+Oftentimes, the natural way to express functional programs is by using
+polymorphism. One example is this `zip`-`rev` property, which
+is conjecture 85 obtained from the isaplanner testsuite:
+
+```{.tip-include .no-check-sat .no-functions .no-datatypes}
+prop_85.smt2
+```
+
+Here, `rev` is used both on lists of `a` and `b`, but also
+on pairs of `a` and `b`.
+
+```{.tip-include .no-check-sat .no-functions .TypeSkolemConjecture .Monomorphise-False}
+prop_85.smt2
+```
+
+In this work, we show how to express monomorphisation as a
+predicate horn clause problem, and how to encode things like
+growing the type universe and function universe in it.
+In particular, we show how to be complete when possible,
+and how to use heuristics when possible.
+
+For the benchmark suite, this has not yet posed any problems
+since they don't contain any lemmas: the assumption is that
+the provers will figure these out by themselves from the
+function definitions. ^[FIX THIS: But even though our tool then
+can claim it succeeds to monomoprhise the problem,
+the proof can require a lemma oncerning
+a function whose monomorphic instance
+was not used. In the `zip`-`rev`-example above,
+the length function `len` is not used on list of pairs,
+so there will be no copy of it instantiated at that type.
+If a (hypothetical) proof requires a lemma about the
+`len` on pairs function, that function now needs to
+be synthesised by the prover in the monomorphised problem.
+    Monomorphisation can be incomplete even when it succeeds.
+One example is where `append` is used on `list A`,
+but not on `list B`. But the proof might need a lemma
+about append on `list B`!]
+
+
+We monomorphise the problem wrt to the types occurring
+in the goals (`assert-not`).
+
+* Allow instantiation as long as the type universe does not grow
+  (Potential problem: the function it calls may make it grow)
+* Instantiate when all functions not in the same SCC are
+  available.
+
 The cases which have some room for heuristics are instantiation
 of function definitions, and lemma assertions.
 
@@ -561,17 +692,6 @@ But we might not have the fuel! So:
 
     concat[suc n,a] -> concat[suc m,b] -> min(suc n,suc m,suc o) -> LEM[o,a,b]
 
-Where we just add instances for `min`. We have finitely much fuel anyway:
-(Say we start at fuel 3)
-
-    min(3,3,3)
-    min(3,2,2)
-    min(3,1,1)
-    ...
-    min(2,3,2)
-    ...
-
-The fuel for exciting rules can be throttled. 3 or 2 is a sensible default.
 
 #### Discussion: A lemma trouble?
 This is similar to the call graph for _careful function instantiation_:
@@ -585,94 +705,48 @@ want `L1` and `L2`, even though they won't be come instantiated without
 fuel in our setting. Future work include figuring out when lemmas
 are unproblematic to instantiate without using fuel, to catch cases
 like above.
+-->
 
-TODO:
-* Show what to do when the fuel reaches zero.
-* Add to that an example with polymorphic recursion getting cut off.
+#### Related work
 
-### Old Text
-
-And it is desireable to do this when the size increase is small,
-since type guards and predicates can desturb trigger selection in SMT solvers.
-An overview of type encoding for polymorphism is [@blanchette2013encoding].
-
-Even though there has been work on supporting polymorphism natively
-in FO provers and SMT solvers, in particular Alt-Ergo [@BobotAltErgo], but also
-initial work for CVC4, this is not yet standard practice.
-
-Oftentimes, the natural way to express functional programs is by using
-polymorphism. One example is this `zip`-`rev` property, which
-is conjecture 85 obtained from the isaplanner testsuite:
-
-```{.tip-include .no-check-sat .no-functions .no-datatypes}
-prop_85.smt2
-```
-
-Here, `rev` is used both on lists of `a` and `b`, but also
-on pairs of `a` and `b`.
-
-```{.tip-include .no-check-sat .no-functions .TypeSkolemConjecture .Monomorphise}
-prop_85.smt2
-```
-
-In this work, we show how to express monomorphisation as a
-predicate horn clause problem, and how to encode things like
-growing the type universe and function universe in it.
-In particular, we show how to be complete when possible,
-and how to use heuristics when possible.
-
-As shown in [@BobotPaskevich2011frocos], calculating
-the set of reachable ground instances for a polymorphic problem
-is undecidable, and their construction can be made in our setting.
-
-Futhermore, the set is infinite for many problems due to polymorphic recursion,
-either in datatype declarations or in function definitions. But assertions can
-enforce polymorphic recursion, too. As an example, assume the zip-rev
-conjecture above is asserted as a lemma.  Then say some ground type is used in
-the program, like `(list Int)`. Then the lemma suggests that `(list (Pair Int Int))` is used too, by instantiating the lemma with the type substitution `a`
-and `b` both replaced with `Int`.  Now, this yields another instatiation of
-`(list (Pair Int (Pair Int Int)))`, and so on.
-
-For the benchmark suite, this has not yet posed any problems
-since they don't contain any lemmas: the assumption is that
-the provers will figure these out by themselves from the
-function definitions. ^[FIX THIS: But even though our tool then
-can claim it succeeds to monomoprhise the problem,
-the proof can require a lemma oncerning
-a function whose monomorphic instance
-was not used. In the `zip`-`rev`-example above,
-the length function `len` is not used on list of pairs,
-so there will be no copy of it instantiated at that type.
-If a (hypothetical) proof requires a lemma about the
-`len` on pairs function, that function now needs to
-be synthesised by the prover in the monomorphised problem.
-    Monomorphisation can be incomplete even when it succeeds.
-One example is where `append` is used on `list A`,
-but not on `list B`. But the proof might need a lemma
-about append on `list B`!]
-
-
-We monomorphise the problem wrt to the types occurring
-in the goals (`assert-not`).
-
-We successfully monomorphised 350 of our 351 benchmarks;
-the failing one has an irregular data type.
-
-#### related work
-
-We could make a complete encoding of types using ideas from Nick's paper
-[@blanchette2013encoding]. That article also outlines a "Finite Monomrphisation Algorithm"
+As noted above, we could make a complete encoding of types using ideas from Nick's paper
+[@blanchette2013encoding]. That article also outlines a "Finite Monomorphisation Algorithm"
 (sect 7.1), with the settings in sledgehammer. By default, the type universe
 is allowed to grow thrice, and at most 200 new formulae are allowed to be introduced.
 
 We have not yet formalized our monomorphisation, but it has been done in
 [@Li08trustedsource], though they don't support polymorphic recursion
 or formulae. Their approach is basically the one to removing polymorphism
-by cloning as in [@Olivia97fromml] in the ML setting without
+by cloning as in [@Oliva97fromml] in the ML setting without
 polymorphic recursion. They take extra care to do monomorphisation
 before defunctionalisation to be able to have simply typed closures.
 Our work can be seen as an extension of their approaches in the
 presence of polymorphic recursion and lemmas.
+
+
+## Lambda lifting and axiomatization of lambdas
+
+To enable theorem provers that have no support
+for first-class functions and lambdas, we can
+defunctionalise the program and axiomatize
+the closures. The `twice`-`double` example
+above then becomes:
+
+```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas}
+double-curried.smt2
+```
+
+A new abstract sort, `fun1` has been introduced
+which stands for functions taking one argument.
+The function `apply1` applies an argument to a fun.
+
+Furthermore, the theory can be monomorphised to
+remove the polymorphism from `fun1`:
+
+```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas .Monomorphise-False}
+double-curried.smt2
+```
+
 
 ## Back and forth between case and if-then-else
 
@@ -701,9 +775,6 @@ Say something about the examples from the Leon benchmark suite.
 
 Not yet implemented:
 
-* Induction
-* Axiomatizations of theories
-  (example: Int with only comparisons should be come an abstract total order)
 * Bottom-semantics a'la Haskell
 * Case only on variables and unroll defaults
   (another way to make a theory UEQ)

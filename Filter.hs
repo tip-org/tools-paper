@@ -15,6 +15,7 @@ import qualified Tip.Pretty.Why3 as Why3
 import Control.Monad
 import Text.PrettyPrint(Doc)
 
+
 transform :: Block -> IO Block
 transform (CodeBlock (name, ("tip":classes), attrs) expr) =
   return (tipBlock name classes attrs expr)
