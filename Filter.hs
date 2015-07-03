@@ -1,6 +1,9 @@
 #!/usr/bin/runhaskell
 
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DeriveFunctor #-}
 import Text.Pandoc.JSON
 import Text.Pandoc
 import Tip.Core
@@ -25,15 +28,21 @@ transform block = return block
 
 tipBlock name classes attrs expr =
   case parse expr of
-    Left err -> CodeBlock (name, [], attrs) err
+    Left err  -> CodeBlock (name, [], attrs) err
     Right thy ->
-      CodeBlock (name, [], attrs) $
-      case foldl (>>=) (lintEither "parse" thy) (map pass passes) of
-        Left doc -> show doc
-        Right thy' -> mode modes thy'
+      case go classes [] [] of
+        Right (modes, passes) ->
+          CodeBlock (name, [], attrs) $
+          case foldl (>>=) (fmap (:[]) (lintEither "parse" thy)) (map pass passes) of
+            Left doc   -> show doc
+            Right thy' -> unlines (pick $ map (mode modes) thy')
+              where
+                pick strs = case [ i | ThyNum i <- modes ] of
+                         i:_ | i `elem` [0..length strs-1] -> [strs !! i]
+                         _                                 -> strs
+        Left err -> CodeBlock (name, [], attrs) err
   where
-    (modes, passes) = go classes [] []
-    go [] modes passes = (reverse modes, reverse passes)
+    go [] modes passes = Right (reverse modes, reverse passes)
     go ("no-datatypes":xs) modes passes = go xs (NoDatas:modes) passes
     go ("no-check-sat":xs) modes passes = go xs (NoCheckSat:modes) passes
     go ("no-functions":xs) modes passes = go xs (NoFuns:modes) passes
@@ -41,16 +50,29 @@ tipBlock name classes attrs expr =
     go ("no-sigs":xs) modes passes = go xs (NoSigs:modes) passes
     go ("no-sorts":xs) modes passes = go xs (NoSorts:modes) passes
     go ("why3":xs) modes passes = go xs (Why3:modes) passes
+    go (('t':n):xs) modes passes = go xs (ThyNum (read n):modes) passes
     go (x:xs) modes passes =
-      case reads x of
-        [(pass, "")] -> go xs modes (pass:passes)
-        _ -> error ("Unknown pass " ++ x)
-        -- Todo: use opt-parse-applicative
+      let subst = [ case y of '-' -> ' '
+                              '_' -> ','
+                              'L' | prev == '-'            -> '['
+                              'R' | prev `elem` ['0'..'9'] -> ']'
+                              _         -> y
+                  | (y,prev) <- x `zip` ('X':x)
+                  ]
+      in case reads subst of
+           [(p, "")] -> go xs modes (p:passes)
+           _ -> Left ("Unknown pass " ++ subst)
 
-data Mode = NoDatas | NoProps | NoFuns | NoSigs | NoSorts | NoCheckSat | Why3 deriving (Show, Eq)
+data Mode = NoDatas | NoProps | NoFuns | NoSigs | NoSorts | NoCheckSat | Why3 | ThyNum Int deriving (Show, Eq)
 
-pass :: StandardPass -> Theory Id -> Either Doc (Theory Id)
-pass p = lintEither (show p) . freshPass (runPass p)
+data FoldFold f g a = FoldFold { unFoldFold :: f (g a) }
+  deriving (Functor,Traversable,Foldable)
+
+pass :: StandardPass -> [Theory Id] -> Either Doc [Theory Id]
+pass p = mapM (lintEither (show p)) . freshPass (continuePasses [p] . unFoldFold) . FoldFold
+  where
+  sfh []     = emptyTheory
+  sfh (x:xs) = x
 
 mode :: [Mode] -> Theory Id -> String
 mode ms thy@Theory{..}

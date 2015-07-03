@@ -21,6 +21,8 @@
 \usepackage{tabularx}
 \usepackage{inconsolata}
 \usepackage{listings}
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 $if(highlighting-macros)$
 $highlighting-macros$
 $endif$

@@ -89,7 +89,8 @@ Outstanding differences to Why3:
 * no termination check
 * quickspec support
 * low-level format suitable for expressing benchmarks
-* todos^[induction passes, partiality semantics]
+* induction pass^[but doesn't why3 have this!?]
+* todos^[partiality semantics]
 
 
 Maybe some example property right here: side by side comparison
@@ -112,8 +113,8 @@ After monomorphisation, lambda lifting, match to if-then-else and axiomatization
 declarations:
 
 ```{.tip-include
-    .TypeSkolemConjecture .Monomorphise .LambdaLift
-    .AxiomatizeLambdas .Monomorphise .NegateConjecture
+    .TypeSkolemConjecture .Monomorphise-False .LambdaLift
+    .AxiomatizeLambdas .Monomorphise-False .NegateConjecture
     .RemoveMatch .AxiomatizeFuncdefs}
 example.smt2
 ```
@@ -221,6 +222,32 @@ We can support these semantics:
 
 # Passes
 
+## Applying structural induction
+
+We provide a transformation that applies structural induction over data types
+in the goal. This looks at the quantifier of the goal, and does induction on
+the variable at a given a position in the quantifier list.^[TODO: what does why3's induction transformation do?]
+
+This is a pass that gives a separate theory for each proof obligation yielded
+by the induction pass. When using the command line tool, the theories are put
+in separate files in a directory specified as a command line argument.
+
+The pass can also do induction on several variables, or repeatedly do
+induction on the same variable. There are some alternatives how strong
+induction hypotheses to add. This pass does not do the strongest, it uses
+HipSpec's heuristic and adds the strict subterms of the conclusion.
+This is predictable, symmetric and is shown to work well in practice.
+Doing induction both natural number arguments on an abstract binary predicate `p`
+looks like this in the step case:
+
+```{.tip .Induction-L0_1R .t3 .no-functions}
+;.SkolemiseConjecture}
+(declare-datatypes () ((nat (zero) (succ (pred nat)))))
+(declare-fun p (nat nat) Bool)
+(assert-not (forall ((x nat) (y nat)) (p x y)))
+(check-sat)
+```
+
 ## Uncurrying the theory
 
 Our Haskell frontend makes a faithful rendition of its
@@ -323,7 +350,7 @@ An example, the instantiation records for `reverse`:
   (par (a)
     (reverse ((xs (list a))) (list a)
       (match xs (case nil (as nil (list a)))
-                (case (cons h t) (append (reverse t) (cons h nil)))))))
+                (case (cons h t) (append (reverse t) (cons h (as nil (list a)))))))))
 (check-sat)
 ```
 
@@ -350,6 +377,7 @@ how they interact. In the general case, you need to be able
 to synthesise new functions to be complete.
 To this end, we would also like to instantiate functions
 when they seem harmless. Two ways to do it:
+
 * Allow instantiation as long as the type universe does not grow
   (Potential problem: the function it calls may make it grow)
 * Instantiate when all functions not in the same SCC are

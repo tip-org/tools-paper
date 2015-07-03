@@ -9,7 +9,10 @@ clean:
 
 TEMPLATE=latex.template
 BIBFILE=bibfile.bib
-FILTER=./Filter.hs
+FILTER=./Filter
+
+./Filter: Filter.hs
+	ghc --make Filter.hs
 
 %.tex: %.md $(TEMPLATE) $(BIBFILE) $(FILTER) $(glob *.smt2)
 	pandoc $< -o $@ --template $(TEMPLATE) --standalone --filter $(FILTER) --bibliography $(BIBFILE) --biblatex
