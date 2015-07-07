@@ -22,9 +22,9 @@ transform (CodeBlock (name, ("tip":classes), attrs) expr) =
 transform (CodeBlock (name, ("tip-include":classes), attrs) file) = do
   contents <- readFile file
   return (tipBlock name classes attrs contents)
-transform (CodeBlock (name, ["include"], attrs) file) = do
+transform (CodeBlock (name, ("include":classes), attrs) file) = do
   contents <- readFile file
-  return (CodeBlock (name, [], attrs) contents)
+  return (CodeBlock (name, classes, attrs) contents)
 transform block = return block
 
 tipBlock name classes attrs expr =

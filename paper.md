@@ -1,35 +1,33 @@
 ---
-abstract: We show our new toolbox for inductive theorem provers and benchmarks. Encourage development of provers etc.
+abstract: TIP is a toolbox for users and developers of inductive provers. It consists of a large number of tools which can, for example, simplify an inductive problem, monomorphise it or find counterexamples to it. We are using TIP to help maintain a set of benchmarks for inductive theorem provers, where its main job is to encode features that are not natively supported by the respective provers. TIP makes it easier to write inductive provers, by supplying necessary tools such as lemma discovery which prover authors can simply import into their own prover.
 ---
 
 # Introduction
 
-More and more people are making inductive theorem provers. New
-inductive provers include Zeno [@zeno], HipSpec [@hipspecCADE],
+More and more people are making inductive theorem provers. As well as
+specialised provers such as Zeno [@zeno], HipSpec [@hipspecCADE],
 Hipster [@hipster], Pirate [@SPASSInduction] and Graphsc [@graphsc],
-while the CVC4 [@cvc4] and Dafny [@dafny] systems have gained
-induction support.
+some traditionally non-inductive provers such as CVC4 [@cvc4] and
+Dafny [@dafny] can now do induction.
 
-Spurred on by the new interest in inductive theorem proving, we
-recently introduced a suite of inductive benchmarks [@TIP-benchmarks],
-which currently stands at 343 problems. The benchmarks are expressed
-in our TIP format, a rich language containing inductive datatypes,
-built-in integers, higher-order functions, polymorphism, recursive
-function definitions and first-order logic.
+There are many ingredients to a good inductive prover:
 
-#### Translating TIP to other formats
+* It needs to instantiate induction schemas, either using structural
+  induction, fixpoint induction, Isabelle-style recursion induction or
+  some other means.
+* It needs to be good at first-order reasoning to discharge the proof
+  obligations coming from induction, either using a first-order prover
+  or SMT solver or its own reasoning engine.
+* It needs to find the correct lemmas to prove, either by
+  generalisation [@acl2], theory exploration [@theorema; @quickspec]
+  or by looking at failed proof attempts
+  [@jasmin-lpar; @productiveuse].
 
-We also developed a tool to translate TIP to other formats. As very
-few inductive provers support all TIP's features, the tool's main job
-is to encode features that the prover does not support. For example,
-if a prover does not support polymorphism, the TIP tool can
-monomorphise the problem.
-
-#### TIP as a toolbox
-
-These provers vary widely: some support polymorphic types, some don't;
-some understand higher-order functions, some don't; some reason about
-programs, some about logical formulas.
+Until now, anyone writing an inductive prover has had to make or
+integrate these components themselves. For example, HipSpec contains a
+large amount of code to communicate with QuickSpec, instantiate
+induction schemas, and translate proof obligations to TPTP [@TPTP]
+or SMT-LIB [@smtlib25] formats. The contribution of this paper is
 
 We have boiled down our knowledge from writing HipSpec [@hipspecCADE], which
 connects Haskell, our theory exploration tool QuickSpec [@quickspec] and SMT
@@ -65,6 +63,47 @@ This work has two different goals:
 * To encourage people to write their own provers (based on our API or command-line tools or whatever)
 * To ease interopability with existing (and future provers) that want to use their own format.
 This paper accompanies the test suite and is an exciting tool on its own.
+
+
+examples: rudimentophocles, translating benchmark problems
+
+In this paper, we describe our tool TIP, which helps authors of
+inductive theorem provers in two ways:
+
+* blah
+* blah
+
+In this paper, we describe our TIP (tool for inductive provers) tool,
+which has two aims: improving interoperability between theorem provers,
+and lowering the barrier to entry for new provers.
+
+(the TIP tool)
+
+#### The TIP benchmark format
+
+Spurred on by the new interest in inductive theorem proving, we
+recently introduced a suite of inductive benchmarks [@TIP-benchmarks],
+which currently stands at 343 problems. The benchmarks are expressed
+in our TIP format, a rich language containing inductive datatypes,
+built-in integers, higher-order functions, polymorphism, recursive
+function definitions and first-order logic. The TIP tool originated
+as a program for translating from TIP to other provers' input formats.
+
+Inductive provers are quite varied: some require monomorphic problems,
+some require first-order problems, some only reason about programs
+rather than arbitrary formulas. Very few inductive provers match up
+exactly with TIP's features.
+
+#### Translating TIP to other formats
+
+Very few inductive provers support all TIP's features, and what's more
+all of them use their own input format. We have therefore developed a
+tool to translate TIP to other formats. Apart from the boring job of
+converting syntax, the tool has the more interesting job of encoding
+any features in the input problem that the target prover doesn't support.
+
+#### TIP as a toolbox
+
 
 In comparison to Why3 [@boogie11why3],
 
@@ -803,7 +842,7 @@ Allows theorem provers to use QuickSpec theory exploration in their tools
 
 (where should this go?)
 
-Rudimentophocles^[Named after the lesser-known Greek philosopher.] is
+Rudimentophocles^[Named after the lesser-known Ancient Greek philosopher.] is
 a basic inductive theorem prover with lemma discovery written in shell
 script. It uses CVC4 to do the induction, QuickSpec to do the lemma
 discovery and TIP to connect the two. It is not intended as a real
@@ -821,70 +860,44 @@ Coinduction (reference to CVC work)
 
 # Rudimentophocles
 
-``` {.bash}
-#!/bin/bash
+``` {.include .bash}
+rudimentophocles
+```
 
-# Run the input file through QuickSpec.
-# Discovered lemmas get added as new goals.
-IFS=' '
-file=$(tip-spec $1 | grep -A1000000 '^;;')
+# Example run of Rudimentophocles
 
-# Read a problem from stdin and try to prove as many goals as possible.
-# Takes a single parameter, which is the timeout to give to CVC4.
-prove() {
-  file=$(cat)
+Here is an example showing the output of Rudimentophocles on a simple
+theory of `append` and `reverse`. The input file has a single conjecture
+that `reverse (reverse xs) = xs`:
 
-  progress= # Set to yes if we manage to prove some goal.
-  n=0       # The index of the goal we're trying to prove now.
+``` {.include}
+rudimentophocles-in.smt2
+```
 
-  while true; do
-    # Check that n isn't out of bounds.
-    if echo $file|tip --select-conjecture $n >& /dev/null; then
-      # Make a theory where goal n is the only goal.
-      goal=$(echo $file|tip --select-conjecture $n --smtlib)
-      # Can we prove it without induction?
-      result=$((echo '(set-logic ALL_SUPPORTED)'; echo $goal) |
-               cvc4 --lang smt2.5 --tlimit=100)
-      if [[ $result = unsat ]]; then
-        # Proved without induction - delete the goal.
-        echo -n ':D ' >&2
-        file=$(echo $file|tip --delete-conjecture $n)
-        progress=yes
-      else
-        # Can we prove the goal with induction?
-        result=$((echo '(set-logic ALL_SUPPORTED)'; echo $goal) |
-                 cvc4 --lang smt2.5 --tlimit=$1 --quant-ind)
-        if [[ $result = unsat ]]; then
-          # Proved with induction - change the goal into a lemma.
-          echo -n ':) ' >&2
-          file=$(echo $file|tip --proved-conjecture $n)
-          progress=yes
-        else
-          # Failed to prove the goal - try the next one.
-          echo -n ':( ' >&2
-          ((n=$n+1))
-        fi
-      fi
-    else
-      # We've tried all goals - if we failed to prove any,
-      # then stop, otherwise go round again.
-      echo >&2
-      if [[ -z $progress ]]; then break; fi
-      progress=
-      n=0
-    fi
-  done
+Rudimentophocles first runs QuickSpec to discover likely lemmas about
+`append` and `reverse`:
 
-  # Print out the final theory.
-  echo $file
-}
+``` {.include}
+rudimentophocles-out-1
+```
 
-# Run the proof loop, gradually increasing the timeout.
-for i in 100 400 1000; do
-  file=$(echo $file | prove $i)
-done
+It then goes into a proof loop, taking one conjecture at a time and
+trying to prove it. It prints `:(` when it failed to prove a
+conjecture, `:)` when it proved a conjecture without induction, and
+`:D` when it proves a conjecture with the help of induction:
 
-# Print the final theory out as WhyML so that it's easy to read.
-echo
-echo $file | tip --why
+``` {.include}
+rudimentophocles-out-2
+```
+
+Rudimentophocles prints a newline when it has tried all conjectures, then
+goes back and retries the failed ones (in case it can now prove them with
+the help of lemmas). In this case it manages to prove all the discovered
+conjectures, and prints out the following final theory. Notice that:
+a) the property `reverse (reverse xs) = xs` is now an axiom (`assert`)
+rather than a conjecture (`assert-not`), indicating that it has been proved,
+and b) several other proved lemmas have been added to the theory file.
+
+``` {.include}
+rudimentophocles-out-3
 ```

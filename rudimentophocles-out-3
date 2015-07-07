@@ -1,0 +1,31 @@
+(declare-datatypes (a)
+  ((list (nil) (cons (head a) (tail (list a))))))
+(define-fun-rec
+  (par (a)
+    (append
+       ((xs (list a)) (ys (list a))) (list a)
+       (match xs
+         (case nil ys)
+         (case (cons z zs) (cons z (append zs ys)))))))
+(define-fun-rec
+  (par (a)
+    (reverse
+       ((xs (list a))) (list a)
+       (match xs
+         (case nil (as nil (list a)))
+         (case (cons y ys)
+           (append (reverse ys) (cons y (as nil (list a)))))))))
+(assert
+  (par (x)
+    (forall ((y (list x))) (= (append y (as nil (list x))) y))))
+(assert
+  (par (x)
+    (forall ((y (list x)) (z (list x)) (x2 (list x)))
+      (= (append (append y z) x2) (append y (append z x2))))))
+(assert
+  (par (x)
+    (forall ((y (list x)) (z (list x)))
+      (= (append (reverse z) (reverse y)) (reverse (append y z))))))
+(assert
+  (par (a) (forall ((xs (list a))) (= (reverse (reverse xs)) xs))))
+(check-sat)

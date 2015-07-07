@@ -1,0 +1,9 @@
+Dreaming up conjectures...
+append x Nil = x
+append Nil x = x
+append (Cons x y) z = Cons x (append y z)
+append (append x y) z = append x (append y z)
+reverse Nil = Nil
+reverse (reverse x) = x
+reverse (Cons x Nil) = Cons x Nil
+append (reverse y) (reverse x) = reverse (append x y)

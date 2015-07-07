@@ -31,7 +31,7 @@ $endif$
 
 \begin{document}
 
-\title{TIP: Tools for Inductive Provers}
+\title{TIP: a Tool for Inductive Provers}
 
 \author{Dan Ros\'{e}n \and Nicholas Smallbone}
 \institute{Department of Computer Science and Engineering, Chalmers University of Technology
