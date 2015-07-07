@@ -31,15 +31,15 @@ $endif$
 
 \begin{document}
 
-\title{TIP: a Tool for Inductive Provers}
+\title{TIP: Tools for Inductive Provers}
 
 \author{Dan Ros\'{e}n \and Nicholas Smallbone}
 \institute{Department of Computer Science and Engineering, Chalmers University of Technology
 	\email{\{danr,nicsma\}@chalmers.se}
 	}
 
-\authorrunning{Ros\'{e}n, Smallbone}
-\titlerunning{$title$}
+%\authorrunning{Ros\'{e}n, Smallbone}
+%\titlerunning{$title$}
 
 \maketitle
 

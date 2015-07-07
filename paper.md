@@ -4,11 +4,78 @@ abstract: TIP is a toolbox for users and developers of inductive provers. It con
 
 # Introduction
 
-More and more people are making inductive theorem provers. As well as
-specialised provers such as Zeno [@zeno], HipSpec [@hipspecCADE],
-Hipster [@hipster], Pirate [@SPASSInduction] and Graphsc [@graphsc],
-some traditionally non-inductive provers such as CVC4 [@cvc4] and
-Dafny [@dafny] can now do induction.
+More and more people are making inductive theorem provers. Besides
+traditional systems such as ACL2 [@acl2], new provers such as Zeno
+[@zeno], HipSpec [@hipspecCADE], Hipster [@hipster], Pirate
+[@SPASSInduction] and Graphsc [@graphsc] have appeared, and some
+formerly non-inductive provers such as CVC4 [@cvc4] and Dafny [@dafny]
+can now do induction.
+
+To make it easier to scientifically compare these provers, we recently
+compiled a benchmark suite of 343 inductive problems [@TIP-benchmarks].
+We ran into a problem: all of the provers are very different.
+Some expect the problem to be monomorphic, some expect it to be
+first-order, some expect it to be expressed as a functional program
+rather than a logic formula. If we stuck to only features supported by
+all the provers, we would have very little to work with.
+
+Instead, we designed a rich language which can express a wide variety
+of problems. The TIP format is an extension of SMT-LIB [@smtlib25] and
+includes inductive datatypes, built-in integers, higher-order
+functions, polymorphism, recursive function definitions and
+first-order logic.
+
+#### The TIP tools
+In this paper, we demonstrate a set of tools for transforming and
+processing inductive problems. The tools were originally designed to
+translate from TIP format to provers' native formats but have become
+much more flexible.
+
+The tools revolve around the TIP format. There are _parsers_, which
+convert an existing format to TIP, _pretty-printers_, which convert
+TIP to another format, and _passes_, which transform a TIP problem
+in some way. All are accessible as command-line tools or by a Haskell
+interface.
+
+We currently have the following tools:
+
+* Parsers for SMT-LIB and Haskell.
+* Pretty-printers for SMT-LIB, TPTP TFF, Haskell, WhyML and Isabelle/HOL.
+* Passes for eliminating features not supported by a prover:
+  monomorphisation, defunctionalisation, replacement of `case` expressions
+  with `if-then-else`, replacement of function definitions with axioms
+  defining the functions, and so on.
+* HBMC, a model checker. This takes a TIP problem and tries to find a
+  counterexample to the conjecture.
+* QuickSpec, a theory exploration tool. This takes a TIP problem,
+  tests it to find interesting lemmas which seem to hold, and adds
+  them as conjectures to the problem.
+* A structural induction pass, which takes a problem, a conjecture,
+  and a set of variables to do induction over, and generates proof
+  obligations for proving the conjecture by induction, in the form of
+  a series of TIP problems.
+
+<!--
+We are planning to add parsers and pretty-printers for other formats,
+as well as more passes that prove to be useful for tool authors. In
+the end we would like TIP to be a universal format for induction
+problems, backed by a powerful toolchain.
+-->
+
+TIP has two main goals, improving interoperability between inductive
+provers and lowering the barrier to entry for writing an inductive
+prover.
+
+#### Making inductive provers interoperable
+
+It is bad for science if all inductive provers are incompatible: how
+can we compare them?
+
+... more formats
+
+... semantic differences, passes etc.
+
+#### Making it easier to write an inductive prover
 
 There are many ingredients to a good inductive prover:
 
@@ -23,6 +90,22 @@ There are many ingredients to a good inductive prover:
   or by looking at failed proof attempts
   [@jasmin-lpar; @productiveuse].
 
+The large number of parts makes it hard to make new inductive provers.
+You may, for example, have a grand new idea for an induction
+principle, but don't want to make your own lemma discovery system to
+try it out. We want to provide off-the-shelf components that the
+author of an inductive prover can use to build their tool---just as
+someone writing an experimental first-order prover might use an
+existing clausifier instead of writing their own. TIP provides
+ready-made solutions to all three problems above: a pass for applying
+structural induction, pretty-printers that transform problems into
+TPTP or SMT-LIB to be handled by a first-order prover, and access to
+the QuickSpec theory exploration system. We demonstrate this by describing
+Rudimentophocles, a simplistic inductive prover with lemma discovery,
+written as a shell script which combines TIP to handle the induction
+and E to do the first-order reasoning.
+
+<!--
 Until now, anyone writing an inductive prover has had to make or
 integrate these components themselves. For example, HipSpec contains a
 large amount of code to communicate with QuickSpec, instantiate
@@ -57,6 +140,7 @@ current infrastructure to connect the induction mode in CVC4 [@cvc4] with
 QuickSpec2 [@quickspec], in a bash script! (Add induction tactic to tip to use
 a theorem prover without induction (Z3 or with monotonox allows us to use E or
 vampire...) this is the essence of HipSpec, of course)
+-->
 
 This work has two different goals:
 
@@ -64,7 +148,7 @@ This work has two different goals:
 * To ease interopability with existing (and future provers) that want to use their own format.
 This paper accompanies the test suite and is an exciting tool on its own.
 
-
+<!--
 examples: rudimentophocles, translating benchmark problems
 
 In this paper, we describe our tool TIP, which helps authors of
@@ -79,28 +163,8 @@ and lowering the barrier to entry for new provers.
 
 (the TIP tool)
 
-#### The TIP benchmark format
-
-Spurred on by the new interest in inductive theorem proving, we
-recently introduced a suite of inductive benchmarks [@TIP-benchmarks],
-which currently stands at 343 problems. The benchmarks are expressed
-in our TIP format, a rich language containing inductive datatypes,
-built-in integers, higher-order functions, polymorphism, recursive
-function definitions and first-order logic. The TIP tool originated
-as a program for translating from TIP to other provers' input formats.
-
-Inductive provers are quite varied: some require monomorphic problems,
-some require first-order problems, some only reason about programs
-rather than arbitrary formulas. Very few inductive provers match up
-exactly with TIP's features.
-
 #### Translating TIP to other formats
 
-Very few inductive provers support all TIP's features, and what's more
-all of them use their own input format. We have therefore developed a
-tool to translate TIP to other formats. Apart from the boring job of
-converting syntax, the tool has the more interesting job of encoding
-any features in the input problem that the target prover doesn't support.
 
 #### TIP as a toolbox
 
@@ -140,6 +204,7 @@ The next version of HipSpec is in fact just calls to Tip
 and orchestrating the runs of theorem provers. In a way,
 Tip is a reimplementation of HipSpec, but as a library
 that users and developers can gain leverage from.
+-->
 
 ## Random example
 
@@ -673,11 +738,19 @@ script. It uses CVC4 to do the induction, QuickSpec to do the lemma
 discovery and TIP to connect the two. It is not intended as a real
 theorem prover, but rather a demonstration of what TIP can do.
 
+... Rudimentophocles, a simple inductive theorem prover and
+rudimentary clone of HipSpec. The difference is that, while HipSpec is
+6000 lines of Haskell code, Rudimentophocles is a 100-line shell
+script built on top of TIP. Rudimentophocles is not intended as a
+serious inductive theorem prover, but it demonstrates ...
+
 # Future work
 
 Future backends: Leon, Smallcheck, THF, TFF
 
 Coinduction (reference to CVC work)
+
+extra features e.g. inductive predicates
 
 \printbibliography
 
