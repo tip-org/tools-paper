@@ -291,21 +291,102 @@ eta-expansion.
 ## Monomorphisation
 
 Oftentimes, the natural way to express functional programs is by using
-polymorphism. We support rank 1 polymorphism in our tools:
-all definitions can quantify over type variables, but only at the
-top level. However, many provers do not support polymorphism,
+polymorphism.  And just so, the problems in the benchmark suite typically
+define functions like list map and concatenation polymorphically, even if they
+are only used at a few, or oftentimes, only one instance.
+However, many provers do not support polymorphism,
 or not even a monomorphic sorted logic.
-Though there has been work on supporting polymorphism natively
+To make problems look natural and not like an encoding,
+we support rank 1 polymorphism in our tools
+(all definitions can quantify over type variables, but only at the
+top level).  Though there has been work on supporting polymorphism natively
 in FO provers and SMT solvers, in particular Alt-Ergo [@BobotAltErgo], but also
 initial work for CVC4, this is not yet standard practice.
-Hence, we provide a pass to automatically remove monomorphism
-by cloning polymorphic definitions at ground types. At
-some problems, this procedure is not complete.
-It is possible to encode types completely, but this
-is heavier and the introduced ovehead could for instance
-desturb trigger selection in SMT solvers. ^[An overview of type encoding for polymorphism is
-[@blanchette2013encoding]. TODO: Is this the right reference?
-]
+Thus, we provide a monomorphisation pass that removes
+polymorphic definitions by cloning them at different ground types.
+
+At some problems, this procedure is not complete.
+There are a few obstacles to making a complete procedure:
+
+* Polymorphic recursion: recursive functions that call themselves at
+  a bigger type, requiring infinitely many copies. Data type constructors
+  can also have this quality, and if cloning of lemmas (assertions)
+  is too aggressive, they can also lead to inifintely many copies.
+  We outline below how we deal with this problem in practice (and in an
+  incomplete way)
+
+* As shown in [@BobotPaskevich2011frocos],
+  calculating the set of reachable ground instances for a polymorphic problem is
+  undecidable, and their construction carries over directly in our setting.
+  To curb this, we only make simulations and check if
+  the a set of copying rules terminate within some rounds.
+  If it does not, we introduce fuel arguments similar to [@leinoFuel],
+  guaranteeing termination (in an incomplete way).
+  We show this construction later in this section.
+
+It is possible to encode types completely, but this is heavier and the
+introduced ovehead could for instance desturb trigger selection in SMT solvers.
+^[An overview of type encoding for polymorphism is [@blanchette2013encoding].
+TODO: Is this the right reference? ]
+
+### The construction
+
+We show how to flexibly express monomorphisation
+as predicate horn clauses, and then obtaining the minimal model.
+
+
+    Functions activate their dependencies at the same fuel:
+
+        f(a) = ... g(a) ... h(a) ...
+
+    gives
+
+        f(S(n),a) -> g(S(n),a)
+        f(S(n),a) -> h(S(n),a)
+
+    For polymorphic recursion, we lower the fuel on the RHS.
+
+    Then we want to add
+
+        g(S(n1),a), h(S(n2),a), min(S(n1),S(n2),S(n3)) -> f(S(n3),a)
+
+    If this rule is what causes non-termination, we drop the fuel power in the RHS:
+
+        g(S(n1),a), h(S(n2),a), min(S(n1),S(n2),S(n3)) -> f(n3,a)
+
+    Furthermore, we can split the preconditions here to make instantiation more
+    enthusiastic:
+
+        g(S(n),a) -> f(S(n),a)
+
+        h(S(n),a) -> f(S(n),a)
+
+    For the ones on this that yields non-termination, we drop the fuel in the RHS.
+
+    For lemmas, the situation is similar, but there is no definition rule.
+    So everything is really very uniform:
+
+        * SEEDS:    Ground instances from the definition. Starts at some fuel, like
+                    1, 2 or 3.
+
+        * PRIO   I: Definitions. These only get fuels with direct
+                    polymorphic recursion
+
+        * PRIO  II: If everything that is required is active, also activate this
+
+        * PRIO III: If enough things to cover the precondition is active,
+                    also activate this (very enthusiastic)
+
+    If a definition comes back with fuel 0, we could call the parametric
+    version and keep that around.  But that's not directly going to work
+    the type of arguments are a mix of instantiated and polymorphic data
+    types, so we could just let this module abstract them immediately!
+    (lemmas are removed, data types and functions are given abstract sorts
+    or abstract signatures.)
+
+
+We start with the ground seeds of the types and functions
+occuring in the goal.
 
 In case of polymorphic recursion, where a function or a constructor
 makes a call to its parent with a bigger type, the polymorphism
@@ -313,15 +394,6 @@ cannot be fully removed, but we can approximate the program
 by letting these definitions unroll a few times and then becoming
 opaque. This section describes how to do this.
 
-In this work, we show how to flexibly express monomorphism
-as predicate horn clauses, and then obtaining the minimal model.
-We start with the ground seeds of the types and functions
-occuring in the goal. As shown in [@BobotPaskevich2011frocos],
-calculating the set of reachable ground instances for a polymorphic problem is
-undecidable, and their construction can be made in our setting.
-To curb this, when we add a new clause to the set of
-clauses, we check if the current system terminates within 10
-parallell rewrites. If it does not, we introduce fuel arguments.
 
 The initial ground instances, the seeds, are given by the
 conjecture. To this end, we do a type-level skolemisation
@@ -723,7 +795,6 @@ before defunctionalisation to be able to have simply typed closures.
 Our work can be seen as an extension of their approaches in the
 presence of polymorphic recursion and lemmas.
 
-
 ## Lambda lifting and axiomatization of lambdas
 
 To enable theorem provers that have no support
@@ -747,6 +818,13 @@ remove the polymorphism from `fun1`:
 double-curried.smt2
 ```
 
+#### Discussion
+
+This is closure conversion as described in [@Reynolds72Defunctionalisation].
+A similar construction as in the monomorphisation section could be used to
+specialize higher-order functions to cloned copies of first order functions.
+How this is can be done for functional programs is described in
+[@DarlingtonSpecialisation].
 
 ## Back and forth between case and if-then-else
 
