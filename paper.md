@@ -284,7 +284,7 @@ definition of natural number addition without any lemmas when doing induction
 on both variables. Induction on both of two natural number variables,
 on an abstract predicate `p` looks like this in the last of three step cases:
 
-```{.tip .Induction-L0_1R .t3 .no-functions}
+```{.tip .Induction-L0_1R .t3 .NoFuns}
 ;.SkolemiseConjecture}
 (declare-datatypes () ((nat (zero) (succ (pred nat)))))
 (declare-fun p (nat nat) Bool)
@@ -344,15 +344,20 @@ initial work for CVC4, this is not yet standard practice.
 Thus, we provide a monomorphisation pass that removes
 polymorphic definitions by cloning them at different ground types.
 
-At some problems, this procedure is not complete.
-There are a few obstacles to making a complete procedure:
+At some problems, this procedure is not complete.  For an inductive prover,
+every function definition is valuable. As an example, the more functions you
+have when you do theory exploration, the better you know how they interact. In
+the general case, you need to be able to synthesise new functions to be
+complete.  To this end, we would also like to instantiate functions when they
+seem harmless. But, there are a few obstacles to making a complete procedure:
 
 * Polymorphic recursion: recursive functions that call themselves at
   a bigger type, requiring infinitely many copies. Data type constructors
   can also have this quality, and if cloning of lemmas (assertions)
   is too aggressive, they can also lead to inifintely many copies.
-  We outline below how we deal with this problem in practice (and in an
-  incomplete way)
+  But we can approximate the program by letting these definitions unroll a few
+  times and then becoming opaque.  We outline below how we deal with this in
+  practice (and in an incomplete way).
 
 * As shown in [@BobotPaskevich2011frocos],
   calculating the set of reachable ground instances for a polymorphic problem is
@@ -370,113 +375,152 @@ TODO: Is this the right reference? ]
 
 ### The construction
 
-We show how to flexibly express monomorphisation
-as predicate horn clauses, and then obtaining the minimal model.
+We show how to flexibly express monomorphisation as predicate horn clauses, and
+then obtaining the minimal model.
+We introduce rules that are of the form
 
+    forall x1..xm . LHS1, .., LHSn -> RHS
 
-    Functions activate their dependencies at the same fuel:
+Where LHS1 is a term, using the variables `x1` .. `xn`.
+All variables must present somewhere in the terms `LHS1` ... `LHSn`,
+the precondition.
+We will write `forall xs. LHSs -> RHS1, .., RHSn` as an
+abbreviation for `forall xs. LHSs -> RHS1` up to `forall xs. LHSs -> RHSn`.
+The functions in the terms will be the top-level definitions
+in our program, so functions or sort declarations. The arguments
+will be the types they are applied to. Later, we will
+also introduce a fuel successor function and zero.
+We start by looking at the goal, the `assert-not` where our seeds
+are: the ground types where everything originates from.
 
-        f(a) = ... g(a) ... h(a) ...
+```{.tip-include .NoDatas .NoCheckSat .NoFuns}
+prop_85.smt2
+```
 
-    gives
+We cannot handle a polymorphic goal now, so first you need
+to skolemise the goal at the type level. Luckily, we
+provide a pass that does just that. It introduces abstract
+sorts and substitutes them for the type variables.
 
-        f(S(n),a) -> g(S(n),a)
-        f(S(n),a) -> h(S(n),a)
+```{.tip-include .NoDatas .NoCheckSat .NoFuns .TypeSkolemConjecture}
+prop_85.smt2
+```
 
-    For polymorphic recursion, we lower the fuel on the RHS.
+We take all the functions and types mentioned in the goal and
+add them without any preconditions. Here, some of them are:
 
-    Then we want to add
+    -> list(sk_a), list(sk_b), len(sk_a), len(sk_b), zip(sk_a,sk_a),
+       rev(sk_a), rev(sk_b), rev(pair(sk_a,sk_b)), ...
 
-        g(S(n1),a), h(S(n2),a), min(S(n1),S(n2),S(n3)) -> f(S(n3),a)
+Now, for definitions, we make sure that everything they
+need is active. So let's look at the `rev` function:
 
-    If this rule is what causes non-termination, we drop the fuel power in the RHS:
+    (define-fun-rec (par (a)
+      (rev ((x (list a))) (list a)
+        (match x
+          (case nil (as nil (list a)))
+          (case (cons y xs) (append (rev xs) (cons y (as nil (list a)))))))))
 
-        g(S(n1),a), h(S(n2),a), min(S(n1),S(n2),S(n3)) -> f(n3,a)
+We see that it calls and uses lists and its constructors, and also calls append
+(and itself, but luckily not at a bigger type!)
 
-    Furthermore, we can split the preconditions here to make instantiation more
-    enthusiastic:
+    rev(a) -> rev(a), append(a), nil(a), cons(a), list(a), a
 
-        g(S(n),a) -> f(S(n),a)
+Similarily, for data type definitions we also add for each
+entry (type constructor, data constructors, projectors) everything
+it needs to be in scope.
 
-        h(S(n),a) -> f(S(n),a)
+How do we deal with lemmas? We identify two modes:
 
-    For the ones on this that yields non-termination, we drop the fuel in the RHS.
+* _Safe cloning_: make a copy only if _all_ required components
+  are already there.
 
-    For lemmas, the situation is similar, but there is no definition rule.
-    So everything is really very uniform:
+* _Enthusiastic cloning_: make a copy if enough components are
+  active to cover all type variables.
 
-        * SEEDS:    Ground instances from the definition. Starts at some fuel, like
-                    1, 2 or 3.
+Notably, safe cloning never introduces any new copies,
+and therefore is never a problem for termination.
+The enthusiastic cloning can readily make more clones,
+as a lemma will need to have a clone for each of its
+dependencies. The critiera might be a bit confusing,
+but consider a lemma `L(a,b)` with the two type variables
+`a` and `b` regarding three functions `f(a)`, `g(b)` and `h(a,b)`.
+We need the precondition to cover all type variables,
+so the two rules created for _enthuisastic cloning_ is:
 
-        * PRIO   I: Definitions. These only get fuels with direct
-                    polymorphic recursion
+    f(a) & g(b) -> L(a,b)
+    h(a,b) -> L(a,b)
 
-        * PRIO  II: If everything that is required is active, also activate this
+For brevity, the _safe cloning_ rule requires all three in the precondition:
 
-        * PRIO III: If enough things to cover the precondition is active,
-                    also activate this (very enthusiastic)
+    f(a) & g(b) & h(a,b) -> L(a,b)
 
-    If a definition comes back with fuel 0, we could call the parametric
-    version and keep that around.  But that's not directly going to work
-    the type of arguments are a mix of instantiated and polymorphic data
-    types, so we could just let this module abstract them immediately!
-    (lemmas are removed, data types and functions are given abstract sorts
-    or abstract signatures.)
+As mentioned earlier, its beneficial to do theory exploration
+with many functions available. The same distinction can
+also be made for function definitions. Consider this
+slightly weird function:
 
+```.haskell
+mystery_length xs = length xs + length [xs]
+```
 
-We start with the ground seeds of the types and functions
-occuring in the goal.
+It calls length on two types, one of them being bigger
+than the input. For the safe rule, we want both of
+them to be in scope, and the important parts is this:
 
-In case of polymorphic recursion, where a function or a constructor
-makes a call to its parent with a bigger type, the polymorphism
-cannot be fully removed, but we can approximate the program
-by letting these definitions unroll a few times and then becoming
-opaque. This section describes how to do this.
+    length(x), length(list(x)) -> mystery_length(x)
 
+We can also enthusiastically instantiate this function.
+One of the rules we get is this:
 
-The initial ground instances, the seeds, are given by the
-conjecture. To this end, we do a type-level skolemisation
-of the conjecture. So if the conjecture quantifies over
-the type `a` and mentions the function `f(a)`,
-we introduce a new abstract sort `sk_a`: and add the rule:
+    length(x) -> mystery_length(x)
 
-    -> f(sk_a)
+But if we have a record `length(A)`, this leads to `mystery_length(A)`,
+which then uses `length(list(A))`, and we have infinitely many
+instantiations. We simulate cloning with the rules a few rounds,
+and if it does not terminate with that, we add _fuel arguments_
+as outlined in the next section.
 
-which states that `f(sk_a)` is always active. This now
-enables other rules to fire.
+### Fuel paramaters
 
-For function declarations, we simply make sure that
-they activate all their necessary dependencies.
-If a function `h` has two type variables `a` and `b`,
-and makes a call to `f` at `a` and `g` at `b` we
-add this rule:
+We can fix the rules in the sections above in the case when they do not
+terminate by adding fuel arguments.  The idea is to always attach a fuel
+argument as a first argument to every function, and only in  the case of
+possibly non-terminating rules, decrease it on the right hand side.
 
-    h(a,b) -> f(a)
-    h(a,b) -> g(b)
+Definitions activate their dependencies at the same fuel, so a function like this:
 
-This means that we will make a copy of `h(a,b)` if
-the function `f(a)` and `g(b)` are copied.
+    f(a) = ... g(a) ... f(a) ...
 
-But for an inductive prover, every function definition
-is valuable. As an example, the more functions you have
-when you do theory exploration, the better you know
-how they interact. In the general case, you need to be able
-to synthesise new functions to be complete.
-To this end, we would also like to instantiate functions
-when they seem harmless. So in the example above, we would
-also like to add this rule:
+gives these rules:
 
-    f(a), g(b) -> h(a,b)
+    f(S(n),a) -> g(S(n),a)
+    f(S(n),a) -> f(S(n),a)
 
-We give these rules a lower priority, and add rules
-from higher to lower priority, checking termination
-by simulating 10 parallel assignment steps. If it
-does not terminate, we add _fuel arguments_:
+Here, `S` stand for the successor function on fuels, to make sure that
+we do not fire it at zero fuel. If the function is polymorphically recursive,
 
-    f(Succ(n)), g(Succ(m)), min(Succ(n),Succ(m),Succ(o)) -> h(Succ(o),a,b)
+    f(a) = ... g(a) ... f(list(a)) ...
 
-Where we just add instances for `min`. We have finitely much fuel anyway:
-(Say we start at fuel 3)
+, we will notice that the rule `f(S(n),a) -> f(S(n),list(a))` does not
+terminate, and adjust it to:
+
+    f(S(n),a) -> f(n,list(a))
+
+This rule terminates, by construction.
+
+For the _safe_ and _enthusiastic_ rules described above, we need
+to take the minimum of the fuels on the right hand side. So,
+one of the example rules above:
+
+    f(a) & g(b) -> L(a,b)
+
+Is augmented in this way with "similar" fuel and definitely decreasing fuel:
+
+    f(S(n),a) & g(S(m),b) & min(S(n),S(m),S(o)) -> L(S(o),a,b)
+    f(S(n),a) & g(S(m),b) & min(S(n),S(m),S(o)) -> L(o,a,b)
+
+This uses a partial but sufficient axiomatisation of minimum:
 
     min(3,3,3)
     min(3,2,2)
@@ -485,338 +529,41 @@ Where we just add instances for `min`. We have finitely much fuel anyway:
     min(2,3,2)
     ...
 
-The fuel for exciting rules can be throttled. 3 or 2 is a sensible default.
-(In the example above, we cannot just have one of `f` or `g` on the left-hand side
-as all type variables need to be mentioned. We take all minimal
-sets as left-hand sides that cover all variables).
+(here, 3 stands for the fuel `S(S(S(Z)))`, and so on...)
 
-For lemmas we add one rule that says that we want a copy of it
-if all function symbols of it are active. This has a high priority.
-With lower priority, we do as outlined above for the function definitions:
-we instantiate the lemma if there is some function active, and
-as for all rules add fuels as necessary.
+To figure out which ones of the version we need (decreasing or "similar" fuel) ,
+we sort the rules according how important they are. The rules are
+seeds, then definitions, then safe cloning and last enthusiastic cloning.
+Then we use binary search while adding more and more rules to the
+set of considered rules until we find a rule that with it causes
+an non-termination and without it terminates. Then we adjust this
+rule with definitely decreasing fuels, and continue.
 
-As an example:
-Futhermore, the set is infinite for many problems due to polymorphic recursion,
-either in datatype declarations or in function definitions. But assertions can
-enforce polymorphic recursion, too. As an example, assume the zip-rev
-conjecture above is asserted as a lemma.  Then say some ground type is used in
-the program, like `(list Int)`. Then the lemma suggests that `(list (Pair Int Int))` is used too, by instantiating the lemma with the type substitution `a`
-and `b` both replaced with `Int`.  Now, this yields another instatiation of
-`(list (Pair Int (Pair Int Int)))`, and so on.
+If a definition comes back with fuel 0, we make it an abstract sort
+if it was a data type definiton, and just a type signature if it
+was a function definition. It it is a lemma, we remove it.
 
+### Recap
 
-TODO:
-* Show what to do when the fuel reaches zero.
-* Add to that an example with polymorphic recursion getting cut off.
+As a recap, these are the four levels:
+
+* Seeds: Ground instances from the definition. Starts at some configurable fuel.
+
+* Definitions: Functions and datatypes. Fuels decrease only with polymorphic recursion.
+
+* Safe cloning: If everything that is required is active, also activate this.
+
+* Enthusiastic cloning: If enough things to cover the precondition is active, also activate this (very enthusiastic).
+
+We give these rules a lower priority, and add rules from higher to lower
+priority, checking termination by simulating some parallel assignment steps. If it
+does not terminate, we add fuel arguments.
+
+The initial fuel can be throttled. Three or two is a sensible default,
+but one fuel could used if no approximations should bedone.
 
 We successfully monomorphised 350 of our 351 benchmarks;
 the failing one has an irregular data type.
-
-<!--
-We have five different kinds of entries in our theories:
-anonymous sort declarations (could have type arguments),
-
-```{.tip .no-check-sat}
-(declare-sort M 2)
-(check-sat)
-```
-
-Here, we just want to make sure to instantiate this sort if it has two arguments.
-If we get $M(t1,t2)$ for ground t1 and t2 a new copy is made, say `M_t1_t2`.
-
-```{.tip .no-check-sat .no-sorts}
-(declare-sort M 2)
-(declare-fun (par (a b) (f ((M a b)) (M b a))))
-(check-sat)
-```
-
-If we get `f(t1,t2)` for ground t1 and t2, we make a copy of `f_t1_t2`.
-
-The remaining types are more interesting:
-
-* Function definitions
-* Data type definitions
-* Goals (negated assertions)
-* Lemmas (assertions)
-
-We have two different kinds of records: type constructors and functions.
-say List(a) and append(a), reverse(a).
-
-### Function definitions
-
-An example, the instantiation records for `reverse`:
-
-```{.tip .no-check-sat .no-datatypes .no-sigs}
-(declare-datatypes (a) ((list (nil) (cons (head a) (tail (list a))))))
-(declare-fun (par (a) (append ((list a) (list a)) (list a))))
-(define-fun-rec
-  (par (a)
-    (reverse ((xs (list a))) (list a)
-      (match xs (case nil (as nil (list a)))
-                (case (cons h t) (append (reverse t) (cons h (as nil (list a)))))))))
-(check-sat)
-```
-
-A function mentions types in its type signature, its local definitions,
-and all functions it has active.
-
-```
-reverse(a) -> list(a)    # from type signature result and local variables xs,t
-reverse(a) -> nil(a)     # pattern and constructor call
-reverse(a) -> cons(a)    # pattern and constructor call
-reverse(a) -> a          # from local variabe h
-reverse(a) -> append(a)  # makes a call
-reverse(a) -> reverse(a) # actually calls itself too. this rule can be pruned
-```
-
-When should reverse be activated (i.e. be on the rhs of the implication)?
-Just as `reverse` activates `append`, other functions calling `reverse`
-will make `reverse` activated.
-
-```
-mystery_length xs = length xs + length [xs]
-```
-
-    length(x), length(list(x)) -> mystery_length(x)
-
-incorrect:
-
-    list(x) -> mystery_length(x)
-
-### Polymorphic recursion in functions
-
-```.haskell
-polyrec :: Nat -> (a -> Int) -> a -> Int
-polyrec Zero     to_int x = x
-polyrec (Succ n) to_int x = polyrec n (\ (a,b) -> to_int a + to_int b) (x+1,x-1)
-```
-
-Here, we get
-
-    polyrec(a) -> polyrec(Pair(a,a))
-
-Thus, instantiating `polyrec` makes an infinite number of instantiations.
-We'll show later how to curb this.
-
-### Data types
-
-```{.tip .no-check-sat .no-datatypes .no-sigs}
-(declare-datatypes (a) ((list (nil) (cons (head a) (tail (list a))))))
-```
-
-We look at the data types as signatures:
-
-    # nil
-    list(a) -> nil(a)
-    nil(a) -> list(a)
-    # cons
-    a -> list(a) -> cons(a)
-    cons(a) -> a
-    cons(a) -> list(a)
-    # head
-    list(a) -> a -> head(a)
-    head(a) -> list(a)
-    head(a) -> a
-    # tail
-    list(a) -> tail(a)
-    tail(a) -> list(a)
-
-Additionally, `list` activates all types it needs:
-
-    list(a) -> nil(a), cons(a), head(a), tail(a)
-
-Data types can also be polymorphically recursive.
-We can handle them with a fuel parameter.
-If we instantiate an induction schema before
-monomorphisation, we can still prove properties...
-^[TODO: Example and implementation]
-
-### Conjectures
-
-Conjectures are dead simple: these are the seeds
-for the monomorphisation. We just need to type-skolemise
-the conjecture first.
-We could introduce the same type variable for all
-type variables, but we chose to introduce separate ones.
-
-In the example below, we remove `a` and `b` and replace
-them with skolems:
-
-```{.tip-include .no-check-sat .no-functions .no-datatypes}
-prop_85.smt2
-```
-
-This is with skolem types:
-
-```{.tip-include .no-check-sat .no-functions .no-datatypes .TypeSkolemConjecture}
-prop_85.smt2
-```
-
-Then we take all types and functions as initial records:
-
-```
--> list(sk_a)
--> list(sk_b)
--> len(sk_a)
--> len(sk_b)
--> zip(sk_a,sk_b)
--> rev(sk_a)
--> rev(sk_b)
--> rev(pair(sk_a,sk_b))
-```
-
-In this example, perhaps the only surprising instantiation is `len(par(sk_a,sk_b))`,
-but it is added because of the _signature trigger_ heuristic:
-all the types in `len` are activated, so it is added.
-
-### Lemmas
-
-What triggers should we pick for lemmas (or assertions, in SMT-LIB parlance)?
-One way makes many lemmas behave like polymorphically recursive definitions,
-another makes them never trigger anything new.
-
-It's now important to think as the current active records as two sets:
-the type universe and the instantiated functions.
-We can make it so that lemma instantiation does not grow the type universe,
-but allows new functions to be instantiated.
-
-If we consider the rev-zip-len lemma above, to say that it cannot grow the
-type universe, we say that we only instantiate if all types are active.
-Let's say the lemma itself has a record called L:
-
-    a, b, list(a), list(b), list(pair(a,b)), pair(a,b) -> L(a,b)
-
-Then, we just say that all the functions in it are also activated.
-
-    L(a,b) -> len(a)
-    L(a,b) -> len(b)
-    L(a,b) -> zip(a,b)
-    L(a,b) -> rev(a)
-    L(a,b) -> rev(b)
-    L(a,b) -> rev(pair(a,b))
-
-QUESTION: Can this actually not trigger any new lemmas?
-We have just made an approximation of the types that will become active.
-Really, we should execute it as it were skolemised....
-Yes, say rev makes dummy call to f on list of pairs. Then this will
-be triggered again.
-And then, when we look for all the types it cares about, it needs to
-look through other lemmas. (right?)
-Or we could assume each lemma on its own.
-
-One can add that at least ONE of the functions needs to be active, too:
-
-    len(a), a, b, list(a), list(b), list(pair(a,b)), pair(a,b) -> L(a,b)
-    len(b), a, b, list(a), list(b), list(pair(a,b)), pair(a,b) -> L(a,b)
-    zip(a,b), a, b, list(a), list(b), list(pair(a,b)), pair(a,b) -> L(a,b)
-    rev(a), a, b, list(a), list(b), list(pair(a,b)), pair(a,b) -> L(a,b)
-    rev(b), a, b, list(a), list(b), list(pair(a,b)), pair(a,b) -> L(a,b)
-    rev(pair(a,b)), a, b, list(a), list(b), list(pair(a,b)), pair(a,b) -> L(a,b)
-
-Or that they ALL have to be: (or two..., and so on.)
-
-### New Text
-
-### Old Text
-
-
-Oftentimes, the natural way to express functional programs is by using
-polymorphism. One example is this `zip`-`rev` property, which
-is conjecture 85 obtained from the isaplanner testsuite:
-
-```{.tip-include .no-check-sat .no-functions .no-datatypes}
-prop_85.smt2
-```
-
-Here, `rev` is used both on lists of `a` and `b`, but also
-on pairs of `a` and `b`.
-
-```{.tip-include .no-check-sat .no-functions .TypeSkolemConjecture .Monomorphise-False}
-prop_85.smt2
-```
-
-In this work, we show how to express monomorphisation as a
-predicate horn clause problem, and how to encode things like
-growing the type universe and function universe in it.
-In particular, we show how to be complete when possible,
-and how to use heuristics when possible.
-
-For the benchmark suite, this has not yet posed any problems
-since they don't contain any lemmas: the assumption is that
-the provers will figure these out by themselves from the
-function definitions. ^[FIX THIS: But even though our tool then
-can claim it succeeds to monomoprhise the problem,
-the proof can require a lemma oncerning
-a function whose monomorphic instance
-was not used. In the `zip`-`rev`-example above,
-the length function `len` is not used on list of pairs,
-so there will be no copy of it instantiated at that type.
-If a (hypothetical) proof requires a lemma about the
-`len` on pairs function, that function now needs to
-be synthesised by the prover in the monomorphised problem.
-    Monomorphisation can be incomplete even when it succeeds.
-One example is where `append` is used on `list A`,
-but not on `list B`. But the proof might need a lemma
-about append on `list B`!]
-
-
-We monomorphise the problem wrt to the types occurring
-in the goals (`assert-not`).
-
-* Allow instantiation as long as the type universe does not grow
-  (Potential problem: the function it calls may make it grow)
-* Instantiate when all functions not in the same SCC are
-  available.
-
-The cases which have some room for heuristics are instantiation
-of function definitions, and lemma assertions.
-
-By default, we should always want _careful lemma instantiation_,
-which copies a lemma if all function records appearing in it
-are active.
-
-The corresponding setting exists for _careful function instantiation_,
-but it does not necessarily need to be on by default. However,
-we should not mention things from its own call-graph to be able
-to instantiate it.
-
-    f (x:xs) = x:g xs ; f [] = []
-    g (x:xs) = f xs   ; g [] = []
-
-There are also _enthusiastic_ versions of the above, where just
-one function is active makes the lemma (or function) be active.
-Now we cannot guarantee termination, so we add fuel parameters.
-
-      concat[b] (map[list a,list b] (map[a,b] f) xs)
-    = map[a,b] f (concat[a] xs)
-
-    map[suc n,a,b] -> LEM[n,a,b]
-
-All type variables types needs to be mentioned in the trigger, so
-if we want to add some function that does not mention all type
-variables, we add the function that could not have done it on their own:
-
-    concat[suc n,a] -> concat[suc n,b] -> LEM[n,a,b]
-
-But we might not have the fuel! So:
-
-    concat[suc n,a] -> concat[suc m,b] -> min(suc n,suc m,suc o) -> LEM[o,a,b]
-
-
-#### Discussion: A lemma trouble?
-This is similar to the call graph for _careful function instantiation_:
-
-    A, B -> L1, C
-    A, C -> L2, B
-    A.
-
-Assume `B` and `C` are not dangerous to instantiate, then here we probably
-want `L1` and `L2`, even though they won't be come instantiated without
-fuel in our setting. Future work include figuring out when lemmas
-are unproblematic to instantiate without using fuel, to catch cases
-like above.
--->
 
 #### Related work
 

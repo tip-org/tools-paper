@@ -44,13 +44,6 @@ tipBlock name classes attrs expr =
         Left err -> CodeBlock (name, [], attrs) err
   where
     go [] modes passes = Right (reverse modes, reverse passes)
-    go ("no-datatypes":xs) modes passes = go xs (NoDatas:modes) passes
-    go ("no-check-sat":xs) modes passes = go xs (NoCheckSat:modes) passes
-    go ("no-functions":xs) modes passes = go xs (NoFuns:modes) passes
-    go ("no-properties":xs) modes passes = go xs (NoProps:modes) passes
-    go ("no-sigs":xs) modes passes = go xs (NoSigs:modes) passes
-    go ("no-sorts":xs) modes passes = go xs (NoSorts:modes) passes
-    go ("why3":xs) modes passes = go xs (Why3:modes) passes
     go (('t':n):xs) modes passes = go xs (ThyNum (read n):modes) passes
     go (x:xs) modes passes =
       let subst = [ case y of '-' -> ' '
@@ -60,11 +53,20 @@ tipBlock name classes attrs expr =
                               _         -> y
                   | (y,prev) <- x `zip` ('X':x)
                   ]
-      in case reads subst of
-           [(p, "")] -> go xs modes (p:passes)
-           _ -> Left ("Unknown pass " ++ subst)
+      in case () of
+           _ | [(p, "")] <- reads subst -> go xs modes (p:passes)
+           _ | [(m, "")] <- reads subst -> go xs (m:modes) passes
+           _ -> Left ("Unknown pass or mode " ++ subst)
 
-data Mode = NoDatas | NoProps | NoFuns | NoSigs | NoSorts | NoCheckSat | Why3 | ThyNum Int deriving (Show, Eq)
+data Mode
+    = NoDatas
+    | NoProps
+    | NoFuns
+    | NoSigs
+    | NoSorts
+    | NoCheckSat
+    | Why3
+    | ThyNum Int deriving (Show, Read, Eq)
 
 data FoldFold f g a = FoldFold { unFoldFold :: f (g a) }
   deriving (Functor,Traversable,Foldable)
