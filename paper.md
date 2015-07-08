@@ -27,7 +27,18 @@ first-order logic.
 
 #### The TIP tools
 In this paper, we demonstrate a set of tools for transforming and
-processing inductive problems. The tools were originally designed to
+processing inductive problems. The tools are based around the TIP
+format, and provide a wide variety of operations that are useful to
+users and developers of inductive provers. The tools can, among other
+things:
+
+* Convert TIP to and from other formats such as SMT-LIB and Isabelle/HOL.
+* Remove features from a problem that a prover does not support,
+  such as higher-order functions or polymorphism.
+* Model check a problem, to falsify conjectures in it.
+* Use theory exploration to invent new conjectures about an inductive theory.
+
+The tools were originally designed to
 translate from TIP format to provers' native formats but have become
 much more flexible.
 
@@ -206,13 +217,29 @@ Tip is a reimplementation of HipSpec, but as a library
 that users and developers can gain leverage from.
 -->
 
-## Random example
+## The TIP format
 
-In our format
+The following problem illustrates most of the features of the TIP
+format. It declares the polymorphic list datatype `(list a)`, the
+function `map`, and then states the conjecture that
 
-```{.tip-include }
-example.smt2
 ```
+(declare-datatypes (a) ((list (nil) (cons (head a) (tail (list a))))))
+(define-fun-rec (par (a b)
+  (map ((f (=> a b)) (xs (list a))) (list b)
+    (match xs (case nil (as nil (list b)))
+              (case (cons x xs) (cons (@ f x) (map f xs)))))))
+(assert-not (par (a)
+  (forall ((xs (list a)))
+     (= xs (map (lambda ((x a)) x) xs)))))
+(check-sat)
+```
+
+The format is an extension of SMT-LIB, with the following features:
+
+* Polymorphism, using `par` as proposed in the SMT-LIB 2.6 draft
+  [@smtlib26].
+*
 
 After monomorphisation, lambda lifting, match to if-then-else and axiomatization of function
 declarations:

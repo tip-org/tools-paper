@@ -17,5 +17,5 @@ FILTER=./Filter
 %.tex: %.md $(TEMPLATE) $(BIBFILE) $(FILTER) $(glob *.smt2)
 	pandoc $< -o $@ --template $(TEMPLATE) --standalone --filter $(FILTER) --bibliography $(BIBFILE) --biblatex
 
-paper.pdf: paper.tex
+paper.pdf: paper.tex $(BIBFILE)
 	latexmk -pdf $<
