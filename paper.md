@@ -29,15 +29,40 @@ first-order logic.
 In this paper, we demonstrate a set of tools for transforming and
 processing inductive problems. The tools are based around the TIP
 format, and provide a wide variety of operations that are useful to
-users and developers of inductive provers. The tools can, among other
-things:
+users and developers of inductive provers. The tools include, among others:
+
+* Parsers to convert SMT-LIB and Haskell to TIP.
+* Pretty-printers to convert TIP to SMT-LIB, TPTP TFF, Haskell, WhyML or Isabelle/HOL.
+* Passes for eliminating features not supported by a prover,
+  such as higher-order functions or polymorphism.
+* A structural induction pass. This takes a TIP theory, a conjecture,
+  and a set of variables to do induction over, and generates proof
+  obligations for proving the conjecture by induction.
+* HBMC, a model checker. This searches for counterexamples to conjectures.
+* QuickSpec, a theory exploration tool. This discovers new conjectures
+  about a TIP theory by testing it, which may be useful lemmas for inductive proofs.
+
+We are continually adding more tools to TIP.
+
+we intend to add more passes to BLAH BLAH BLAH. illustrate usefulness with two examples:
+
+We have so far developed two applications on top of the TIP tools:
+
+* _Format conversion_. We use TIP to convert our inductive benchmarks
+  to various provers' input formats. BLAH BLAH BLAH encoding features BLAH
+* _An inductive prover_. We have used TIP to ... here goes many ingredients part ...
+
+<!--
+* A structural induction pass, which takes a problem, a conjecture,
 
 * Convert TIP to and from other formats such as SMT-LIB and Isabelle/HOL.
 * Remove features from a problem that a prover does not support,
   such as higher-order functions or polymorphism.
 * Model check a problem, to falsify conjectures in it.
 * Use theory exploration to invent new conjectures about an inductive theory.
+-->
 
+<!--
 The tools were originally designed to
 translate from TIP format to provers' native formats but have become
 much more flexible.
@@ -66,12 +91,10 @@ We currently have the following tools:
   obligations for proving the conjecture by induction, in the form of
   a series of TIP problems.
 
-<!--
 We are planning to add parsers and pretty-printers for other formats,
 as well as more passes that prove to be useful for tool authors. In
 the end we would like TIP to be a universal format for induction
 problems, backed by a powerful toolchain.
--->
 
 TIP has two main goals, improving interoperability between inductive
 provers and lowering the barrier to entry for writing an inductive
@@ -116,7 +139,6 @@ Rudimentophocles, a simplistic inductive prover with lemma discovery,
 written as a shell script which combines TIP to handle the induction
 and E to do the first-order reasoning.
 
-<!--
 Until now, anyone writing an inductive prover has had to make or
 integrate these components themselves. For example, HipSpec contains a
 large amount of code to communicate with QuickSpec, instantiate
@@ -151,7 +173,6 @@ current infrastructure to connect the induction mode in CVC4 [@cvc4] with
 QuickSpec2 [@quickspec], in a bash script! (Add induction tactic to tip to use
 a theorem prover without induction (Z3 or with monotonox allows us to use E or
 vampire...) this is the essence of HipSpec, of course)
--->
 
 This work has two different goals:
 
@@ -159,7 +180,6 @@ This work has two different goals:
 * To ease interopability with existing (and future provers) that want to use their own format.
 This paper accompanies the test suite and is an exciting tool on its own.
 
-<!--
 examples: rudimentophocles, translating benchmark problems
 
 In this paper, we describe our tool TIP, which helps authors of
@@ -219,27 +239,56 @@ that users and developers can gain leverage from.
 
 ## The TIP format
 
-The following problem illustrates most of the features of the TIP
-format. It declares the polymorphic list datatype `(list a)`, the
-function `map`, and then states the conjecture that
+The TIP format is a variant of SMT-LIB. The following problem about
+lists illustrates most of its features. We first declare the
+polymorphic list datatype `(list a)`.
 
 ```
 (declare-datatypes (a) ((list (nil) (cons (head a) (tail (list a))))))
+```
+
+We then define the list `map` function.
+
+```
 (define-fun-rec (par (a b)
   (map ((f (=> a b)) (xs (list a))) (list b)
-    (match xs (case nil (as nil (list b)))
-              (case (cons x xs) (cons (@ f x) (map f xs)))))))
+    (match xs
+      (case nil (as nil (list b)))
+      (case (cons x xs) (cons (@ f x) (map f xs)))))))
+```
+
+Finally, we conjecture that mapping the identity function over a list
+gives the same list back.
+
+```
 (assert-not (par (a)
   (forall ((xs (list a)))
      (= xs (map (lambda ((x a)) x) xs)))))
 (check-sat)
 ```
 
-The format is an extension of SMT-LIB, with the following features:
+The particular SMT-LIB extensions that TIP uses are:
 
-* Polymorphism, using `par` as proposed in the SMT-LIB 2.6 draft
-  [@smtlib26].
-*
+* Inductive datatypes using SMT-LIB 2.5's `declare-datatypes` [@smtlib25].
+* Recursive function definitions using SMT-LIB 2.5's `define-fun-rec`.
+* Polymorphism, using `par` as proposed for SMT-LIB 2.6 [@smtlib26].
+* Pattern matching, using `match` as proposed for SMT-LIB 2.6.
+
+On top of that we add the syntax `(assert-not p)`, which marks `p` as
+a conjecture and is semantically equivalent to `(assert (not p))`. We
+use this because many inductive provers treat the goal specially.
+
+#### First-class functions
+
+We also add support for first-class functions. The syntax
+`(lambda ((x a)) t)` stands for the expression $\lambda (x:A).\, t$.
+This has type `(=> A B)` if `t` has type `B`.
+
+If `f` is declared as a function from `Int` to `Int`, to be invoked
+as `(f x)`, then we cannot write `(map f xs)`, as the atom `f` on its
+own is not a valid term. Instead we must write `(map (lambda ((x Int)) (f x)) xs)`.
+That is, we must use `lambda` to turn `f` into a first-class function.
+This BLAH BLAH BLAH don't mix up first order and higher order
 
 After monomorphisation, lambda lifting, match to if-then-else and axiomatization of function
 declarations:
