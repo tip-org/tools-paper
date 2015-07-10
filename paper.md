@@ -42,15 +42,21 @@ users and developers of inductive provers. The tools include, among others:
 * QuickSpec, a theory exploration tool. This discovers new conjectures
   about a TIP theory by testing it, which may be useful lemmas for inductive proofs.
 
-We are continually adding more tools to TIP.
+TIP improves the ecosystem of inductive provers in two ways:
 
-we intend to add more passes to BLAH BLAH BLAH. illustrate usefulness with two examples:
+* _Interoperability between provers_.
+  We use TIP to convert our inductive benchmarks to various provers' input formats.
+  BLAH BLAH BLAH
 
-We have so far developed two applications on top of the TIP tools:
+* _Lower barrier to entry for tool authors_.
+  There are many ingredients to a good inductive prover: it must
+  instantiate induction schemas, perform first-order reasoning to
+  discharge the resulting proof obligations, and discover the
+  necessary lemmas to complete the proof.
+  BLAH BLAH BLAH
 
-* _Format conversion_. We use TIP to convert our inductive benchmarks
-  to various provers' input formats. BLAH BLAH BLAH encoding features BLAH
-* _An inductive prover_. We have used TIP to ... here goes many ingredients part ...
+We are continually adding more tools and input and output formats to TIP,
+and BLAH BLAH BLAH
 
 <!--
 * A structural induction pass, which takes a problem, a conjecture,
@@ -237,7 +243,7 @@ Tip is a reimplementation of HipSpec, but as a library
 that users and developers can gain leverage from.
 -->
 
-## The TIP format
+# The TIP format
 
 The TIP format is a variant of SMT-LIB. The following problem about
 lists illustrates most of its features. We first declare the
@@ -280,16 +286,34 @@ use this because many inductive provers treat the goal specially.
 
 #### First-class functions
 
-We also add support for first-class functions. The syntax
-`(lambda ((x a)) t)` stands for the expression $\lambda (x:A).\, t$.
-This has type `(=> A B)` if `t` has type `B`.
+TIP supports higher-order functions, as these often crop up in
+inductive problems. So as not to make provers do unnecessary
+higher-order reasoning, we separate the first-order and
+higher-order parts of TIP as follows.
 
-If `f` is declared as a function from `Int` to `Int`, to be invoked
-as `(f x)`, then we cannot write `(map f xs)`, as the atom `f` on its
-own is not a valid term. Instead we must write `(map (lambda ((x Int)) (f x)) xs)`.
-That is, we must use `lambda` to turn `f` into a first-class function.
-This BLAH BLAH BLAH don't mix up first order and higher order
+Terms in TIP are just as in first-order logic, i.e. each function has
+an arity and must be applied to exactly the right number of arguments.
+For example, suppose `succ` is a function from `Int` to `Int`. Then
+`(succ x)` is a well-typed term,^[Assuming that `x` is an `Int`.] but
+`succ` on its own is not well-formed and we cannot write
+`(map succ xs)`.
 
+On top of this we add a type `(=> a b)` for _first-class functions_,
+which are formed by using `lambda`. The term `(lambda ((x A)) t)`
+means $\lambda (x:A).\, t$, and has type `(=> A B)` if `t` has type
+`B`. For example, the term `(lambda ((x Int)) (succ x))` has type
+`(=> Int Int)`, and we can pass this as an argument to `map`.
+
+Finally, to apply a first-class function, we use the `@` operator.
+In the definition of `map`, we use `(@ f x)` to apply `f` to the list
+element.
+
+This design keeps higher-order reasoning confined to the parts of the
+problem using higher-order functions. Higher-order functions are simply
+terms of a special type `(=> a b)` which are introduced using `lambda`
+and eliminated using `@`.
+
+<!--
 After monomorphisation, lambda lifting, match to if-then-else and axiomatization of function
 declarations:
 
@@ -400,6 +424,7 @@ We can support these semantics:
 
 * Haskell by lifting every value to be effectively a maybe type
   (todo)
+  -->
 
 # Passes
 
