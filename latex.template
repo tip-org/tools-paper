@@ -27,6 +27,12 @@ $if(highlighting-macros)$
 $highlighting-macros$
 $endif$
 
+% Reduce size of verbatim text
+\makeatletter
+\let\oldverbatim@font\verbatim@font
+\def\verbatim@font{\oldverbatim@font\small}
+\makeatother
+
 
 
 \begin{document}

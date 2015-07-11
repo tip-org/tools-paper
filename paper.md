@@ -42,6 +42,14 @@ users and developers of inductive provers. The tools include, among others:
 * QuickSpec, a theory exploration tool. This discovers new conjectures
   about a TIP theory by testing it, which may be useful lemmas for inductive proofs.
 
+XXX integrate this:
+
+* Convert TIP to and from other formats such as SMT-LIB and Isabelle/HOL.
+* Remove features from a problem that a prover does not support,
+  such as higher-order functions or polymorphism.
+* Model check a problem, to falsify conjectures in it.
+* Use theory exploration to invent new conjectures about an inductive theory.
+
 TIP improves the ecosystem of inductive provers in two ways:
 
 * _Interoperability between provers_.
@@ -61,11 +69,6 @@ and BLAH BLAH BLAH
 <!--
 * A structural induction pass, which takes a problem, a conjecture,
 
-* Convert TIP to and from other formats such as SMT-LIB and Isabelle/HOL.
-* Remove features from a problem that a prover does not support,
-  such as higher-order functions or polymorphism.
-* Model check a problem, to falsify conjectures in it.
-* Use theory exploration to invent new conjectures about an inductive theory.
 -->
 
 <!--
@@ -246,14 +249,21 @@ that users and developers can gain leverage from.
 # The TIP format
 
 The TIP format is a variant of SMT-LIB. The following problem about
-lists illustrates most of its features. We first declare the
-polymorphic list datatype `(list a)`.
+lists illustrates all of its features. We first declare the
+polymorphic list datatype `(list a)`, using the `declare-datatypes`
+syntax from SMT-LIB 2.5 [@smtlib25].
 
 ```
 (declare-datatypes (a) ((list (nil) (cons (head a) (tail (list a))))))
 ```
 
-We then define the list `map` function.
+We then define the list `map` function by pattern matching.
+The `par` construct is used to introduce polymorphism.
+Both `match` and `par` are proposed for inclusion in SMT-LIB 2.6 [@smtlib26].
+The syntax for higher-order functions is a TIP extension and we
+discuss it below.
+
+XXX partial matches
 
 ```
 (define-fun-rec (par (a b)
@@ -264,7 +274,10 @@ We then define the list `map` function.
 ```
 
 Finally, we conjecture that mapping the identity function over a list
-gives the same list back.
+gives the same list back. The syntax `(assert-not p)` is a TIP extension
+which is semantically equivalent to `(assert (not p))` but hints that
+`p` is a conjecture. We use this because many inductive provers treat
+the goal specially.
 
 ```
 (assert-not (par (a)
@@ -273,6 +286,9 @@ gives the same list back.
 (check-sat)
 ```
 
+XXX summary of what's in TIP
+
+<!--
 The particular SMT-LIB extensions that TIP uses are:
 
 * Inductive datatypes using SMT-LIB 2.5's `declare-datatypes` [@smtlib25].
@@ -283,6 +299,7 @@ The particular SMT-LIB extensions that TIP uses are:
 On top of that we add the syntax `(assert-not p)`, which marks `p` as
 a conjecture and is semantically equivalent to `(assert (not p))`. We
 use this because many inductive provers treat the goal specially.
+-->
 
 #### First-class functions
 
@@ -313,9 +330,31 @@ problem using higher-order functions. Higher-order functions are simply
 terms of a special type `(=> a b)` which are introduced using `lambda`
 and eliminated using `@`.
 
+# Converting TIP to other formats
+
+Explain what passes have run here:
+
+```
+(declare-sort sk_a 0)
+(declare-sort fun1 0)
+(declare-datatypes () ((list (nil) (cons (head sk_a) (tail list)))))
+(declare-fun apply1 (fun1 sk_a) sk_a)
+(declare-const lam fun1)
+(declare-fun map2 (fun1 list) list)
+(assert (forall ((x sk_a)) (= (apply1 lam x) x)))
+(assert
+  (forall ((f fun1) (xs list))
+    (= (map2 f xs)
+      (ite
+        (is-cons xs) (cons (apply1 f (head xs)) (map2 f (tail xs))) nil))))
+(assert (not (forall ((xs list)) (= xs (map2 lam xs)))))
+(check-sat)
+```
+
 <!--
 After monomorphisation, lambda lifting, match to if-then-else and axiomatization of function
 declarations:
+
 
 ```{.tip-include
     .TypeSkolemConjecture .Monomorphise-False .LambdaLift
@@ -829,21 +868,34 @@ Allows theorem provers to use QuickSpec theory exploration in their tools
 
 `hbmc`
 
-# Case study: Rudimentophocles
+# Rudimentophocles, a simple inductive prover
 
-(where should this go?)
+Rudimentophocles^[Named after the lesser-known Ancient Greek philosopher.]
+is a rudimentary inductive theorem prover, using the E theorem prover
+for first-order reasoning and QuickSpec for lemma discovery.
+It is roughly equivalent in functionality to HipSpec.
+The difference is that, while HipSpec is 6000 lines of Haskell code,
+Rudimentophocles is a 100-line shell script built on top of TIP.
 
-Rudimentophocles^[Named after the lesser-known Ancient Greek philosopher.] is
-a basic inductive theorem prover with lemma discovery written in shell
-script. It uses CVC4 to do the induction, QuickSpec to do the lemma
-discovery and TIP to connect the two. It is not intended as a real
-theorem prover, but rather a demonstration of what TIP can do.
+The source code of Rudimentophocles is found in appendix A, and an example
+run in appendix B. It works as follows:
 
-... Rudimentophocles, a simple inductive theorem prover and
-rudimentary clone of HipSpec. The difference is that, while HipSpec is
-6000 lines of Haskell code, Rudimentophocles is a 100-line shell
-script built on top of TIP. Rudimentophocles is not intended as a
-serious inductive theorem prover, but it demonstrates ...
+* Run QuickSpec to find conjectures about the input theory.
+* Pick a conjecture, and a variable in that conjecture.
+    - Generate proof obligations for proving the conjecture
+      by induction on that variable.
+    - Translate each proof obligation to TPTP and send it to
+      E (with a timeout).
+    - If all proof obligations are discharged, add the conjecture
+      as an axiom to the theory.
+* Repeat this process until no more conjectures can be proved,
+  and print out the final theory.
+
+Each of the steps---discovering conjectures, generating proof
+obligations, and translating them to TPTP---is performed by calling
+TIP. Rudimentophocles is not intended as a serious inductive theorem
+prover, but it demonstrates how easy it is to experiment with new
+inductive tools with the help of TIP.
 
 # Future work
 
