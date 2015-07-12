@@ -279,11 +279,11 @@ For example, suppose `succ` is a function from `Int` to `Int`. Then
 `succ` on its own is not well-formed and we cannot write
 `(map succ xs)`.
 
-On top of this we add a type `(=> a b)` for _first-class functions_,
+On top of this we add a type \texttt{(=> a  b)} for _first-class functions_,
 which are formed by using `lambda`. The term `(lambda ((x A)) t)`
-means $\lambda (x:A).\, t$, and has type `(=> A B)` if `t` has type
+means $\lambda (x:A).\, t$, and has type \texttt{(=> A B)} if `t` has type
 `B`. For example, the term `(lambda ((x Int)) (succ x))` has type
-`(=> Int Int)`, and we can pass this as an argument to `map`.
+\texttt{(=> Int Int)}, and we can pass this as an argument to `map`.
 
 Finally, to apply a first-class function, we use the `@` operator.
 In the definition of `map`, we use `(@ f x)` to apply `f` to the list
@@ -291,8 +291,8 @@ element.
 
 This design keeps higher-order reasoning confined to the parts of the
 problem using higher-order functions. Higher-order functions are simply
-terms of a special type `(=> a b)` which are introduced using `lambda`
-and eliminated using `@`.
+terms of a special type \verb|(=> a b)| which are introduced using
+`lambda` and eliminated using `@`.
 
 # Translating TIP to other formats {#translating}
 
