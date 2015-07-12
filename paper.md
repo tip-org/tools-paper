@@ -224,10 +224,10 @@ syntax from SMT-LIB 2.5 [@smtlib25].
 We then define the list `map` function by pattern matching.
 The `par` construct is used to introduce polymorphism.
 Both `match` and `par` are proposed for inclusion in SMT-LIB 2.6 [@smtlib26].
+To support functions like `head`, a `match` expression may have missing
+cases, in which case its value is unspecified.
 The syntax for higher-order functions is a TIP extension and we
 discuss it below.
-
-XXX partial matches
 
 ```
 (define-fun-rec (par (a b)
@@ -250,7 +250,16 @@ the goal specially.
 (check-sat)
 ```
 
-XXX summary of what's in TIP
+To summarise, the TIP format consists of:
+
+* SMT-LIB plus `declare-datatypes` (inductive datatypes), `define-funs-rec`
+(recursive function definitions), `match` (pattern matching) and `par`
+(polymorphism), which are all standard or proposed extensions to SMT-LIB.
+* Our own TIP-specific extensions: higher-order functions, and
+  `assert-not` for marking the conjecture.
+
+Our tools also understand the SMT-LIB theory of integer arithmetic.
+We intend TIP to be compatible with the standard theories of SMT-LIB.
 
 <!--
 The particular SMT-LIB extensions that TIP uses are:
