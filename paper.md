@@ -137,7 +137,7 @@ The large number of parts makes it hard to make new inductive provers.
 You may, for example, have a grand new idea for an induction
 principle, but don't want to make your own lemma discovery system to
 try it out. We want to provide off-the-shelf components that the
-author of an inductive prover can use to build their tool---just as
+author of an inductive prover can use to build their tool-just as
 someone writing an experimental first-order prover might use an
 existing clausifier instead of writing their own. TIP provides
 ready-made solutions to all three problems above: a pass for applying
@@ -534,55 +534,49 @@ eta-expansion.
 
 ## Monomorphisation
 
-Oftentimes, the natural way to express functional programs is by using
-polymorphism.  And just so, the problems in the benchmark suite typically
+Often, the natural way to express functional programs is by using
+polymorphism.  As an example, the problems in the benchmark suite
 define functions like list map and concatenation polymorphically, even if they
-are only used at a few, or oftentimes, only one instance.
+are only used at a few, or possibly only one instance.
 However, many provers do not support polymorphism,
 or not even a monomorphic sorted logic.
 To make problems look natural and not like an encoding,
 we support rank 1 polymorphism in our tools
 (all definitions can quantify over type variables, but only at the
 top level).  Though there has been work on supporting polymorphism natively
-in FO provers and SMT solvers, in particular Alt-Ergo [@BobotAltErgo], but also
+in FO provers and SMT solvers, in particular Alt-Ergo [@BobotAltErgo], and also
 initial work for CVC4, this is not yet standard practice.
 Thus, we provide a monomorphisation pass that removes
 polymorphic definitions by cloning them at different ground types.
 
-At some problems, this procedure is not complete.  For an inductive prover,
-every function definition is valuable. As an example, the more functions you
-have when you do theory exploration, the better you know how they interact. In
-the general case, you need to be able to synthesise new functions to be
-complete.  To this end, we would also like to instantiate functions when they
-seem harmless. But, there are a few obstacles to making a complete procedure:
+For an inductive prover, every function definition is valuable: the more
+functions you have when you do theory exploration, the better you know how they
+interact. In the general case, a prover needs to be able to synthesise _new_
+functions to find some proofs. Thus, we want to to clone functions
+at types which do not directly appear in the program, but
+could be helpful for a proof. But, there are a few obstacles to making a
+complete procedure:
 
-* Polymorphic recursion: recursive functions that call themselves at
+* Polymorphic recursion: functions that call themselves at
   a bigger type, requiring infinitely many copies. Data type constructors
-  can also have this quality, and if cloning of lemmas (assertions)
+  can also have this property, and if cloning of assertions
   is too aggressive, they can also lead to inifintely many copies.
-  But we can approximate the program by letting these definitions unroll a few
-  times and then becoming opaque.  We outline below how we deal with this in
-  practice (and in an incomplete way).
 
 * As shown in [@BobotPaskevich2011frocos],
-  calculating the set of reachable ground instances for a polymorphic problem is
-  undecidable, and their construction carries over directly in our setting.
-  To curb this, we only make simulations and check if
-  the a set of copying rules terminate within some rounds.
-  If it does not, we introduce fuel arguments similar to [@leinoFuel],
-  guaranteeing termination (in an incomplete way).
-  We show this construction later in this section.
+  calculating the set of reachable ground instances for a polymorphic problem
+  is undecidable, and their construction carries over directly in our setting.
 
-It is possible to encode types completely, but this is heavier and the
+We discuss incomplete heuristics for dealing with this in the further work
+section. It should also be noted that it is possible to encode types
+completely, but this is heavier and the
 introduced ovehead could for instance desturb trigger selection in SMT solvers.
 ^[An overview of type encoding for polymorphism is [@blanchette2013encoding].
 TODO: Is this the right reference? ]
 
 ### The construction
 
-We show how to flexibly express monomorphisation as predicate horn clauses, and
-then obtaining the minimal model.
-We introduce rules that are of the form
+We express monomorphisation as horn clauses in predicate calculus,
+and then obtain the minimal model, i.e. we have rules of the form.
 
     forall x1..xm . LHS1, .., LHSn -> RHS
 
@@ -635,32 +629,16 @@ Similarily, for data type definitions we also add for each
 entry (type constructor, data constructors, projectors) everything
 it needs to be in scope.
 
-How do we deal with lemmas? We identify two modes:
-
-* _Safe cloning_: make a copy only if _all_ required components
-  are already there.
-
-* _Enthusiastic cloning_: make a copy if enough components are
-  active to cover all type variables.
-
-Notably, safe cloning never introduces any new copies,
-and therefore is never a problem for termination.
-The enthusiastic cloning can readily make more clones,
-as a lemma will need to have a clone for each of its
-dependencies. The critiera might be a bit confusing,
-but consider a lemma `L(a,b)` with the two type variables
-`a` and `b` regarding three functions `f(a)`, `g(b)` and `h(a,b)`.
-We need the precondition to cover all type variables,
-so the two rules created for _enthuisastic cloning_ is:
-
-    f(a) & g(b) -> L(a,b)
-    h(a,b) -> L(a,b)
-
-For brevity, the _safe cloning_ rule requires all three in the precondition:
-
-    f(a) & g(b) & h(a,b) -> L(a,b)
-
 As mentioned earlier, its beneficial to do theory exploration
+with many functions available. The same distinction can
+also be made for function definitions. Consider this
+slightly weird function:
+
+```.haskell
+mystery_length xs = length xs + length [xs]
+```
+
+also be made for function definitions. Consider this
 with many functions available. The same distinction can
 also be made for function definitions. Consider this
 slightly weird function:
@@ -686,89 +664,19 @@ instantiations. We simulate cloning with the rules a few rounds,
 and if it does not terminate with that, we add _fuel arguments_
 as outlined in the next section.
 
-### Fuel paramaters
-
-We can fix the rules in the sections above in the case when they do not
-terminate by adding fuel arguments.  The idea is to always attach a fuel
-argument as a first argument to every function, and only in  the case of
-possibly non-terminating rules, decrease it on the right hand side.
-
-Definitions activate their dependencies at the same fuel, so a function like this:
-
-    f(a) = ... g(a) ... f(a) ...
-
-gives these rules:
-
-    f(S(n),a) -> g(S(n),a)
-    f(S(n),a) -> f(S(n),a)
-
-Here, `S` stand for the successor function on fuels, to make sure that
-we do not fire it at zero fuel. If the function is polymorphically recursive,
-
-    f(a) = ... g(a) ... f(list(a)) ...
-
-, we will notice that the rule `f(S(n),a) -> f(S(n),list(a))` does not
-terminate, and adjust it to:
-
-    f(S(n),a) -> f(n,list(a))
-
-This rule terminates, by construction.
-
-For the _safe_ and _enthusiastic_ rules described above, we need
-to take the minimum of the fuels on the right hand side. So,
-one of the example rules above:
-
-    f(a) & g(b) -> L(a,b)
-
-Is augmented in this way with "similar" fuel and definitely decreasing fuel:
-
-    f(S(n),a) & g(S(m),b) & min(S(n),S(m),S(o)) -> L(S(o),a,b)
-    f(S(n),a) & g(S(m),b) & min(S(n),S(m),S(o)) -> L(o,a,b)
-
-This uses a partial but sufficient axiomatisation of minimum:
-
-    min(3,3,3)
-    min(3,2,2)
-    min(3,1,1)
-    ...
-    min(2,3,2)
-    ...
-
-(here, 3 stands for the fuel `S(S(S(Z)))`, and so on...)
-
-To figure out which ones of the version we need (decreasing or "similar" fuel) ,
-we sort the rules according how important they are. The rules are
-seeds, then definitions, then safe cloning and last enthusiastic cloning.
-Then we use binary search while adding more and more rules to the
-set of considered rules until we find a rule that with it causes
-an non-termination and without it terminates. Then we adjust this
-rule with definitely decreasing fuels, and continue.
-
-If a definition comes back with fuel 0, we make it an abstract sort
-if it was a data type definiton, and just a type signature if it
-was a function definition. It it is a lemma, we remove it.
-
-### Recap
-
-As a recap, these are the four levels:
-
-* Seeds: Ground instances from the definition. Starts at some configurable fuel.
-
-* Definitions: Functions and datatypes. Fuels decrease only with polymorphic recursion.
-
-* Safe cloning: If everything that is required is active, also activate this.
-
-* Enthusiastic cloning: If enough things to cover the precondition is active, also activate this (very enthusiastic).
-
-We give these rules a lower priority, and add rules from higher to lower
-priority, checking termination by simulating some parallel assignment steps. If it
-does not terminate, we add fuel arguments.
-
-The initial fuel can be throttled. Three or two is a sensible default,
-but one fuel could used if no approximations should bedone.
 
 We successfully monomorphised 350 of our 351 benchmarks;
 the failing one has an irregular data type.
+
+#### Discussion
+
+Polymorphically recursive definitions  an be approximated by letting them
+definitions unroll a few times and then becoming opaque. A prover could still
+be able to reason about the opaque version of the function if it is mentioned
+in an inductive hypothesis. Similarily, assertions that require infinitely
+many copies to be complete could be curbed with a limit on the number of
+copies. One way is to be inspired by fuel arguments similar to [@leinoFuel],
+guaranteeing termination and predictability.
 
 #### Related work
 
