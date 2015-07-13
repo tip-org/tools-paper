@@ -72,143 +72,6 @@ We are working to make TIP a universal format for induction problems,
 backed by a powerful toolchain. We describe our plans for improving
 TIP further in section \ref{future}.
 
-<!--
-#### Making inductive provers interoperable
-
-It is bad for science if all inductive provers are incompatible: how
-can we compare them?
-
-... more formats
-
-... semantic differences, passes etc.
-
-#### Making it easier to write an inductive prover
-
-There are many ingredients to a good inductive prover:
-
-* It needs to instantiate induction schemas, either using structural
-  induction, fixpoint induction, Isabelle-style recursion induction or
-  some other means.
-* It needs to be good at first-order reasoning to discharge the proof
-  obligations coming from induction, either using a first-order prover
-  or SMT solver or its own reasoning engine.
-* It needs to find the correct lemmas to prove, either by
-  generalisation [@acl2], theory exploration [@theorema; @quickspec]
-  or by looking at failed proof attempts
-  [@jasmin-lpar; @productiveuse].
-
-The large number of parts makes it hard to make new inductive provers.
-You may, for example, have a grand new idea for an induction
-principle, but don't want to make your own lemma discovery system to
-try it out. We want to provide off-the-shelf components that the
-author of an inductive prover can use to build their tool-just as
-someone writing an experimental first-order prover might use an
-existing clausifier instead of writing their own. TIP provides
-ready-made solutions to all three problems above: a pass for applying
-structural induction, pretty-printers that transform problems into
-TPTP or SMT-LIB to be handled by a first-order prover, and access to
-the QuickSpec theory exploration system. We demonstrate this by describing
-Rudimentophocles, a simplistic inductive prover with lemma discovery,
-written as a shell script which combines TIP to handle the induction
-and E to do the first-order reasoning.
-
-Until now, anyone writing an inductive prover has had to make or
-integrate these components themselves. For example, HipSpec contains a
-large amount of code to communicate with QuickSpec, instantiate
-induction schemas, and translate proof obligations to TPTP [@TPTP]
-or SMT-LIB [@smtlib25] formats. The contribution of this paper is
-
-We have boiled down our knowledge from writing HipSpec [@hipspecCADE], which
-connects Haskell, our theory exploration tool QuickSpec [@quickspec] and SMT
-and FO theorem provers.  With this work, we modularize it and make it
-accessible for the community.
-
-Your may have an new idea in one of these areas, for instance an amazing idea
-of a new induction principle.  This tool enables you to try it out with the
-existing infrastructure of a state-of-the-art inductive theorem prover.
-Because, when you make an inductive theorem prover, there are lots of stuff
-to take into consideration and deal with, including:
-
-* lambdas and higher-order functions,
-* polymorphism,
-* a frontend to be able to type in problems,
-* benchmarks,
-* connecting to an underlying SMT or FO prover,
-* lemma discovery,
-* falsifying conjectures^[which is usually not the focus of an inductive
-  prover, so you don't end up spending time on proving non-theorems
-  (hbmc/quickcheck)],
-* instantiating induction schemas
-
-Our library contains many ingredients important for inductive
-theorem proving, for instance theory exploration. We show how to use the
-current infrastructure to connect the induction mode in CVC4 [@cvc4] with
-QuickSpec2 [@quickspec], in a bash script! (Add induction tactic to tip to use
-a theorem prover without induction (Z3 or with monotonox allows us to use E or
-vampire...) this is the essence of HipSpec, of course)
-
-This work has two different goals:
-
-* To encourage people to write their own provers (based on our API or command-line tools or whatever)
-* To ease interopability with existing (and future provers) that want to use their own format.
-This paper accompanies the test suite and is an exciting tool on its own.
-
-examples: rudimentophocles, translating benchmark problems
-
-In this paper, we describe our tool TIP, which helps authors of
-inductive theorem provers in two ways:
-
-* blah
-* blah
-
-In this paper, we describe our TIP (tool for inductive provers) tool,
-which has two aims: improving interoperability between theorem provers,
-and lowering the barrier to entry for new provers.
-
-(the TIP tool)
-
-#### Translating TIP to other formats
-
-
-#### TIP as a toolbox
-
-
-In comparison to Why3 [@boogie11why3],
-
-* not an own format: uses smtlib with small extensions
-* light weight:
-    * no enforced termination check on fucntion definitions
-    * no module system
-* low-overhead encodings to underlying theorem provers (comparisons?)
-
-We can work in harmony together with Why3, and to that end we
-have a why3 output mode to be able to tap into
-the resources provided by them.
-Using Why3 (WhyML?) as an input format is considered, or adding our
-extension to smtlib as an output to Why3.
-
-With this work we want to work on closing the gap on the inductive theorem
-proving part that is open even in the precense of work like Why3.
-Outstanding differences to Why3:
-
-* a more light-weight monomorphisation pass
-* haskell frontend
-* no termination check
-* quickspec support
-* low-level format suitable for expressing benchmarks
-* todos^[partiality semantics, induction pass: the only difference seems to be
-  that Why3 cannot do induction no the same variable many times, and that they
-  do lexicographic induction]
-
-
-Maybe some example property right here: side by side comparison
-of format supported by CVC4 and SMTInd.
-
-The next version of HipSpec is in fact just calls to Tip
-and orchestrating the runs of theorem provers. In a way,
-Tip is a reimplementation of HipSpec, but as a library
-that users and developers can gain leverage from.
--->
 
 # The TIP format {#tip-format}
 
@@ -261,19 +124,6 @@ To summarise, the TIP format consists of:
 Our tools also understand the SMT-LIB theory of integer arithmetic.
 We intend TIP to be compatible with the standard theories of SMT-LIB.
 
-<!--
-The particular SMT-LIB extensions that TIP uses are:
-
-* Inductive datatypes using SMT-LIB 2.5's `declare-datatypes` [@smtlib25].
-* Recursive function definitions using SMT-LIB 2.5's `define-fun-rec`.
-* Polymorphism, using `par` as proposed for SMT-LIB 2.6 [@smtlib26].
-* Pattern matching, using `match` as proposed for SMT-LIB 2.6.
-
-On top of that we add the syntax `(assert-not p)`, which marks `p` as
-a conjecture and is semantically equivalent to `(assert (not p))`. We
-use this because many inductive provers treat the goal specially.
--->
-
 #### First-class functions
 
 TIP supports higher-order functions, as these often crop up in
@@ -296,7 +146,7 @@ confined to the parts of the problem that use higher-order functions.
 
 # Translating TIP to other formats {#translating}
 
-Explain what passes have run here:
+
 
 ```
 (declare-sort sk_a 0)
@@ -314,80 +164,6 @@ Explain what passes have run here:
 (assert (not (forall ((xs list)) (= xs (map2 lam xs)))))
 (check-sat)
 ```
-
-<!--
-After monomorphisation, lambda lifting, match to if-then-else and axiomatization of function
-declarations:
-
-
-```{.tip-include
-    .TypeSkolemConjecture .Monomorphise-False .LambdaLift
-    .AxiomatizeLambdas .Monomorphise-False .NegateConjecture
-    .RemoveMatch .AxiomatizeFuncdefs}
-example.smt2
-```
-
-## Contributions
-
-* In the benchmark article the language layout was not discussed in much detail,
-  so this article complements the benchmark article
-
-* Tool chain with exciting capabilities
-    (input formats (including Haskell) (add Why3 input?))
-    (output formats)
-    (passes)
-    (can run tools: QuickSpec, HBMC, QuickCheck, FEAT, and so on)
-  Should we try get a web interface up quickly?
-
-* Our framework is general: we can support different "logic" or "semantics",
-
-* We show how the command-line tools can be used to boost an inductive
-  theorem prover, dubbed Rudimentophocles.
-  Ultimately, we can envision our tool set to be a platform for
-  experimenting with induction. Developers will then not need
-  to make a theorem prover from scratch, but rather plug methods
-  from new insights in the existing infrastructure to be able
-  to evaluate it quickly.
-
-# (the format)
-
-Rather than developing an own format from scratch,
-we use the already designed SMT-LIB format, which
-is already supported by most SMT provers.
-
-We use
-
-* Datatypes, including match-expressions (in the 2.6 draft)
-* Recursive function definitions (from 2.5).
-  Although this can seem to only matter for some provers,
-  this is actually more universal:
-  for instance it can help in selecting the trigger
-  or orienting the equation
-  (typically left-to-right for function definitions),
-  and as we will see later in the monomorphisation section^[add fwd reference],
-  that it helps also there.
-
-
-Our own additions are:
-
-* Polymorphic function definitions and assertions (asserts are for inclusion to CVC4)
-* Higher-order function and lambda functions (our own syntax)
-* Assert-not to be able to identify what the goal is.
-  This corresponds to `goal` in Why3.
-  In fact, the CVC4 induction mode needs to know which quantifier
-  to do induction on: it cannot be skolemized by hand. So an
-  `assert-not` makes sense in their work, too.
-
-SMT-LIB is extensible through theories. Currently,
-the only theory we use in the benchmarks are
-Integers, but when the need arises, this can be
-extended to bit vectors, arrays, sets, reals, floats, and so on,
-as described by the SMT-LIB theories.
-
-Side-by-side comparison of SMT-LIB and our format,
-to discuss the different additions. (with other formats)
-
-## Translation to other formats
 
 * To vanilla SMT (for provers like CVC4 and Z3),
   We remove our own additions: HOFs, assert-not, (parametric definitions) (function definitions).
@@ -414,20 +190,6 @@ Sketches how to do other formats:
 
 * to THF, we use the TFF1 format, but we add induction "schema" for data types.
 
-## (semantics)
-
-Function declarations are given the semantics as their non-computable axiomatisation.
-
-### Semantics for partiality
-
-We can support these semantics:
-
-* Isabelle-style with uninterpreted function values
-  (blanchettification for partial matches)
-
-* Haskell by lifting every value to be effectively a maybe type
-  (todo)
-  -->
 
 # Passes {#passes}
 
@@ -824,3 +586,239 @@ and b) several other proved lemmas have been added to the theory file.
 ``` {.include}
 rudimentophocles-out-3
 ```
+
+# Old stuff
+
+#### Making inductive provers interoperable
+
+It is bad for science if all inductive provers are incompatible: how
+can we compare them?
+
+... more formats
+
+... semantic differences, passes etc.
+
+#### Making it easier to write an inductive prover
+
+There are many ingredients to a good inductive prover:
+
+* It needs to instantiate induction schemas, either using structural
+  induction, fixpoint induction, Isabelle-style recursion induction or
+  some other means.
+* It needs to be good at first-order reasoning to discharge the proof
+  obligations coming from induction, either using a first-order prover
+  or SMT solver or its own reasoning engine.
+* It needs to find the correct lemmas to prove, either by
+  generalisation [@acl2], theory exploration [@theorema; @quickspec]
+  or by looking at failed proof attempts
+  [@jasmin-lpar; @productiveuse].
+
+The large number of parts makes it hard to make new inductive provers.
+You may, for example, have a grand new idea for an induction
+principle, but don't want to make your own lemma discovery system to
+try it out. We want to provide off-the-shelf components that the
+author of an inductive prover can use to build their tool---just as
+someone writing an experimental first-order prover might use an
+existing clausifier instead of writing their own. TIP provides
+ready-made solutions to all three problems above: a pass for applying
+structural induction, pretty-printers that transform problems into
+TPTP or SMT-LIB to be handled by a first-order prover, and access to
+the QuickSpec theory exploration system. We demonstrate this by describing
+Rudimentophocles, a simplistic inductive prover with lemma discovery,
+written as a shell script which combines TIP to handle the induction
+and E to do the first-order reasoning.
+
+Until now, anyone writing an inductive prover has had to make or
+integrate these components themselves. For example, HipSpec contains a
+large amount of code to communicate with QuickSpec, instantiate
+induction schemas, and translate proof obligations to TPTP [@TPTP]
+or SMT-LIB [@smtlib25] formats. The contribution of this paper is
+
+We have boiled down our knowledge from writing HipSpec [@hipspecCADE], which
+connects Haskell, our theory exploration tool QuickSpec [@quickspec] and SMT
+and FO theorem provers.  With this work, we modularize it and make it
+accessible for the community.
+
+Your may have an new idea in one of these areas, for instance an amazing idea
+of a new induction principle.  This tool enables you to try it out with the
+existing infrastructure of a state-of-the-art inductive theorem prover.
+Because, when you make an inductive theorem prover, there are lots of stuff
+to take into consideration and deal with, including:
+
+* lambdas and higher-order functions,
+* polymorphism,
+* a frontend to be able to type in problems,
+* benchmarks,
+* connecting to an underlying SMT or FO prover,
+* lemma discovery,
+* falsifying conjectures^[which is usually not the focus of an inductive
+  prover, so you don't end up spending time on proving non-theorems
+  (hbmc/quickcheck)],
+* instantiating induction schemas
+
+Our library contains many ingredients important for inductive
+theorem proving, for instance theory exploration. We show how to use the
+current infrastructure to connect the induction mode in CVC4 [@cvc4] with
+QuickSpec2 [@quickspec], in a bash script! (Add induction tactic to tip to use
+a theorem prover without induction (Z3 or with monotonox allows us to use E or
+vampire...) this is the essence of HipSpec, of course)
+
+This work has two different goals:
+
+* To encourage people to write their own provers (based on our API or command-line tools or whatever)
+* To ease interopability with existing (and future provers) that want to use their own format.
+This paper accompanies the test suite and is an exciting tool on its own.
+
+examples: rudimentophocles, translating benchmark problems
+
+In this paper, we describe our tool TIP, which helps authors of
+inductive theorem provers in two ways:
+
+* blah
+* blah
+
+In this paper, we describe our TIP (tool for inductive provers) tool,
+which has two aims: improving interoperability between theorem provers,
+and lowering the barrier to entry for new provers.
+
+(the TIP tool)
+
+#### Translating TIP to other formats
+
+
+#### TIP as a toolbox
+
+
+In comparison to Why3 [@boogie11why3],
+
+* not an own format: uses smtlib with small extensions
+* light weight:
+    * no enforced termination check on fucntion definitions
+    * no module system
+* low-overhead encodings to underlying theorem provers (comparisons?)
+
+We can work in harmony together with Why3, and to that end we
+have a why3 output mode to be able to tap into
+the resources provided by them.
+Using Why3 (WhyML?) as an input format is considered, or adding our
+extension to smtlib as an output to Why3.
+
+With this work we want to work on closing the gap on the inductive theorem
+proving part that is open even in the precense of work like Why3.
+Outstanding differences to Why3:
+
+* a more light-weight monomorphisation pass
+* haskell frontend
+* no termination check
+* quickspec support
+* low-level format suitable for expressing benchmarks
+* todos^[partiality semantics, induction pass: the only difference seems to be
+  that Why3 cannot do induction no the same variable many times, and that they
+  do lexicographic induction]
+
+
+Maybe some example property right here: side by side comparison
+of format supported by CVC4 and SMTInd.
+
+The next version of HipSpec is in fact just calls to Tip
+and orchestrating the runs of theorem provers. In a way,
+Tip is a reimplementation of HipSpec, but as a library
+that users and developers can gain leverage from.
+
+The particular SMT-LIB extensions that TIP uses are:
+
+* Inductive datatypes using SMT-LIB 2.5's `declare-datatypes` [@smtlib25].
+* Recursive function definitions using SMT-LIB 2.5's `define-fun-rec`.
+* Polymorphism, using `par` as proposed for SMT-LIB 2.6 [@smtlib26].
+* Pattern matching, using `match` as proposed for SMT-LIB 2.6.
+
+On top of that we add the syntax `(assert-not p)`, which marks `p` as
+a conjecture and is semantically equivalent to `(assert (not p))`. We
+use this because many inductive provers treat the goal specially.
+
+After monomorphisation, lambda lifting, match to if-then-else and axiomatization of function
+declarations:
+
+
+```{.tip-include
+    .TypeSkolemConjecture .Monomorphise-False .LambdaLift
+    .AxiomatizeLambdas .Monomorphise-False .NegateConjecture
+    .RemoveMatch .AxiomatizeFuncdefs}
+example.smt2
+```
+
+## Contributions
+
+* In the benchmark article the language layout was not discussed in much detail,
+  so this article complements the benchmark article
+
+* Tool chain with exciting capabilities
+    (input formats (including Haskell) (add Why3 input?))
+    (output formats)
+    (passes)
+    (can run tools: QuickSpec, HBMC, QuickCheck, FEAT, and so on)
+  Should we try get a web interface up quickly?
+
+* Our framework is general: we can support different "logic" or "semantics",
+
+* We show how the command-line tools can be used to boost an inductive
+  theorem prover, dubbed Rudimentophocles.
+  Ultimately, we can envision our tool set to be a platform for
+  experimenting with induction. Developers will then not need
+  to make a theorem prover from scratch, but rather plug methods
+  from new insights in the existing infrastructure to be able
+  to evaluate it quickly.
+
+# (the format)
+
+Rather than developing an own format from scratch,
+we use the already designed SMT-LIB format, which
+is already supported by most SMT provers.
+
+We use
+
+* Datatypes, including match-expressions (in the 2.6 draft)
+* Recursive function definitions (from 2.5).
+  Although this can seem to only matter for some provers,
+  this is actually more universal:
+  for instance it can help in selecting the trigger
+  or orienting the equation
+  (typically left-to-right for function definitions),
+  and as we will see later in the monomorphisation section^[add fwd reference],
+  that it helps also there.
+
+
+Our own additions are:
+
+* Polymorphic function definitions and assertions (asserts are for inclusion to CVC4)
+* Higher-order function and lambda functions (our own syntax)
+* Assert-not to be able to identify what the goal is.
+  This corresponds to `goal` in Why3.
+  In fact, the CVC4 induction mode needs to know which quantifier
+  to do induction on: it cannot be skolemized by hand. So an
+  `assert-not` makes sense in their work, too.
+
+SMT-LIB is extensible through theories. Currently,
+the only theory we use in the benchmarks are
+Integers, but when the need arises, this can be
+extended to bit vectors, arrays, sets, reals, floats, and so on,
+as described by the SMT-LIB theories.
+
+Side-by-side comparison of SMT-LIB and our format,
+to discuss the different additions. (with other formats)
+
+## Translation to other formats
+
+## (semantics)
+
+Function declarations are given the semantics as their non-computable axiomatisation.
+
+### Semantics for partiality
+
+We can support these semantics:
+
+* Isabelle-style with uninterpreted function values
+  (blanchettification for partial matches)
+
+* Haskell by lifting every value to be effectively a maybe type
+  (todo)
