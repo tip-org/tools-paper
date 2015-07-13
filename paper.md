@@ -376,7 +376,7 @@ lemmas by doing induction on both variables.
 
 #### Minor transformations
 
-TIP also include simplification passes including inlining, dead code
+TIP also includes simplification passes including inlining, dead code
 elimination and merging equivalent functions. Another transformation
 partially axiomatises inductive data types for provers and formats
 that lack builtin support for them, such as TPTP TFF. This is useful
@@ -393,7 +393,7 @@ theory exploration.
 
 #### Counterexamples to non-theorems
 
-TIP properties can also be tested with QuickCheck [@quickcheck], via the
+TIP properties can also be randomly tested with QuickCheck [@quickcheck], via the
 Haskell converter. Furthermore, the Haskell Bounded Model Checker, HBMC,
 can read TIP files.  These tools can be useful to identify
 non-theorems among conjectures.
@@ -420,6 +420,9 @@ run in appendix B. It works as follows:
       as an axiom to the theory.
 * Repeat this process until no more conjectures can be proved,
   and print out the final theory.
+
+The result is the input theory, but with each proved conjecture
+(taken either from the input problem or QuickSpec) added as an extra axiom.
 
 Each of the steps---discovering conjectures, generating proof
 obligations, and translating them to TPTP---is performed by calling
@@ -478,9 +481,9 @@ We would also like to extend the format by adding inductive
 predicates, as well as coinduction.
 
 Inductive theorem proving has seen a new lease of life recently
-and we believe it has potential for growth. With TIP we hope to
-encourage that growth by fostering competition between provers
-and providing tools.
+and we believe it has more potential for growth. With TIP we hope to
+encourage that growth by fostering competition between provers and
+providing tools.
 
 \AtNextBibliography{\small}
 \printbibliography
