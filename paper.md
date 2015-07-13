@@ -71,7 +71,7 @@ TIP improves the ecosystem of inductive provers in two ways:
   induction principle can implement just that, leaving the first-order
   reasoning and lemma discovery to TIP. In section \ref{rudimentophocles-main}
   we show that it is possible to stitch the TIP tools together to make
-  a simple inductive prover as a shell script.
+  a simple inductive prover as a shell script!
 
 We are continually adding more tools and input and output formats to TIP.
 We are working to make TIP a universal format for induction problems,
@@ -299,15 +299,15 @@ the failing one has a polymorphically recursive data type.
 
 ## Axiomatising function definitions
 
-In translated `map` function in the introduction of this section, the `match`
+In the translated `map` function from the introduction of this section, the `match`
 expression has been translated into if-then-else (`ite`), discriminators
 (`is-nil` and `is-cons`)
 and projection functions (`head` and `tail`) by a transformation
-provided by the toolbox.  For some theorem provers, using if-then-else is not
-an option, or not efficient. An other way to translate function definitions
+included in the toolbox.  For some theorem provers, using if-then-else is not
+an option, or not efficient. Another way to translate function definitions
 using `match` is to transform it to axioms which use pattern-matching on the
 left hand side. The toolbox provides this transformation as well, and the map
-function looks like this in after that transformation:
+function is expressed using these two axioms after that transformation:
 
 ```
 (assert (forall ((f fun)) (= (map f nil) nil)))
@@ -317,14 +317,14 @@ function looks like this in after that transformation:
 
 This works when `match` expressions are only in the right hand side of an
 branch or the top level of a function. To be able to use this pass, we first
-run another provided transformation that commutes `match` expressions "upwards"
-in function definitions. If the problem is provided by if-then-else expressions,
+run another of our transformations that commutes `match` expressions "upwards"
+in function definitions. If the problem is given using if-then-else expressions,
 another transformations in the toolbox transforms it back into efficient
 `match` expressions.
 
 ## Applying structural induction
 
-We provide a transformation that applies structural induction over data types
+We supply a transformation that applies structural induction over data types
 in the goal. This requires a forall quantifier of the goal at the top, and does induction on
 the variable at a given a position in the quantifier list. ^[TODO: the only difference seems to be
   that Why3 cannot do induction no the same variable many times, and that they
