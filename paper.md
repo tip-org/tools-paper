@@ -556,6 +556,7 @@ and b) several other proved lemmas have been added to the theory file.
 rudimentophocles-out-3
 ```
 
+<!--
 # Old stuff
 
 #### Making inductive provers interoperable
@@ -791,3 +792,4 @@ We can support these semantics:
 
 * Haskell by lifting every value to be effectively a maybe type
   (todo)
+-->
