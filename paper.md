@@ -327,7 +327,7 @@ another transformations in the toolbox transforms it back into efficient
 We supply a transformation that applies structural induction over data types
 in the goal. This requires a forall quantifier of the goal at the top, and does induction on
 the variable at a given a position in the quantifier list. ^[TODO: the only difference seems to be
-  that Why3 cannot do induction no the same variable many times, and that they
+  that Why3 cannot do induction on the same variable many times, and that they
   do lexicographic induction]
 
 This is a transformation that gives a separate theory for each proof obligation.
@@ -381,6 +381,8 @@ Not yet implemented:
 * Case only on variables and unroll defaults
   (another way to make a theory UEQ)
 
+## External tools
+
 #### Theory exploration by QuickSpec
 
 `tip-spec`
@@ -396,6 +398,7 @@ Allows theorem provers to use QuickSpec theory exploration in their tools
 #### Counterexamples to non-theorems by QuickCheck and HBMC
 
 `tip-qc`
+Properties are
 
 `hbmc`
 
@@ -639,7 +642,7 @@ Outstanding differences to Why3:
 * quickspec support
 * low-level format suitable for expressing benchmarks
 * todos^[partiality semantics, induction transformation: the only difference seems to be
-  that Why3 cannot do induction no the same variable many times, and that they
+  that Why3 cannot do induction on the same variable many times, and that they
   do lexicographic induction]
 
 
