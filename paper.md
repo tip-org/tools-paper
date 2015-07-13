@@ -77,8 +77,8 @@ We are continually adding more tools and input and output formats to TIP.
 We are working to make TIP a universal format for induction problems,
 backed by a powerful toolchain which can be used by prover authors and
 users alike. We describe our plans for improving TIP further in
-section \ref{future}.
-
+section \ref{future}. TIP is publically available and can be downloaded
+from <https://github.com/tip-org/tools>.
 
 # The TIP format {#tip-format}
 
@@ -153,17 +153,30 @@ confined to the parts of the problem that use higher-order functions.
 
 # Transforming and translating TIP {#transforming}
 
-Although TIP is a variant of SMT-LIB, it looks quite different from
-"vanilla" SMT-LIB. In particular, most SMT solvers do not support
-polymorphism or higher-order functions and we must remove these
-features when translating TIP to SMT-LIB.
+TIP is structured as a large number of independent transformations.
+This is true even of our file format conversions. When TIP and the
+target prover have different feature sets, our approach is to keep the
+problem in TIP as long as possible, running many small transformations
+to reduce the problem to some fragment of TIP which we can translate
+directly. For example, many formats do not support pattern matching,
+so we must translate it to if-then-else, or if the format does not
+support that either, we can transform each function definition into a
+series of axioms. This happens as a TIP-to-TIP transformation.
 
-Our tools automatically remove
-unsupported features when converting TIP to another format. Here is
-what our tool produces when asked to translate the `map` example to
-vanilla SMT-LIB. It has monomorphised the problem, used
+This approach makes TIP quite modular. It is quite easy to add a new
+converter as most of the hard work is taken care of by existing
+transformations. What's more, many of those transformations are
+useful in their own right. In this section we illustrate some of the
+available transformations by showing what stages a TIP problem goes
+through as it is being translated to SMT-LIB.
+
+Although TIP is a variant of SMT-LIB, the two are quite different.
+SMT solvers often do not support polymorphism, higher-order functions
+or pattern-matching so our converter must remove those features.
+Here is what our tool produces when asked to translate the `map`
+example to vanilla SMT-LIB. It has monomorphised the problem, used
 defunctionalisation to eliminate the `lambda` and is using
-`is-cons`/`head`/`tail` instead of `match` to do pattern matching.
+`is-cons`/`head`/`tail` instead of pattern matching.
 
 ```
 (declare-sort sk_a 0)
@@ -180,56 +193,27 @@ defunctionalisation to eliminate the `lambda` and is using
 (check-sat)
 ```
 
-Most formats have their own particular foibles. For example, TPTP TFF
-does not support if-then-else so we must transform each function
-definition into a series of axioms. Our translations
-
-
-* To vanilla SMT (for provers like CVC4 and Z3),
-  We remove our own additions: HOFs, assert-not, (parametric definitions) (function definitions).
-
-* To Isabelle, case is replaced with left-hand-side match
-
-* To Haskell, we replace non-computable parts with uninterpreted functions.
-  ^[We could also support translating equality by
-    maintaining a set of functions that have an Eq constraint
-    we start off by the only function being equals.
-    when you look for functions that call functions that have
-    an eq constraint then it gets an eq constraint added.
-    then you repeat until you get a fixpoint.]
-
-Sketches how to do other formats:
-
-* to TFF1 (Typed first-order logic with rank1 types)
-  Axiomatize data types and function definitions
-  (the latter can be different ways: either recover pattern matching
-  on left-hand-sides, or use discriminators and projections.)
-
-* to FOF, First-order logic (unityped), we use Monotonox.
-  (but what about the booleans?! one solution: FOOL)
-
-* to THF, we use the TFF1 format, but we add induction "schema" for data types.
-
 ## Defunctionalisation
 
-To enable theorem provers that have no support for first-class functions and
-lambdas, the program is defunctionalised [@Reynolds72Defunctionalisation] and
-then the closures are axiomatised.
+To support theorem provers that have no support for first-class functions and
+lambdas, a TIP problem can be defunctionalised [@Reynolds72Defunctionalisation].
+This replaces all $\lambda$-functions in the problem with axiomatised
+function symbols.
 
-In the translated code above, the new abstract sort `fun1` has been introduced
-which stands for functions taking one argument.  And the identity function
-lambda is now named `lam` and is of sort `fun1`. There is an apply function
-named `apply`, together with an axiom that asserts how `apply` and `lam`
-interact.
+In the example above, defunctionalisation has introduced the new
+abstract sort `fun` which stands for functions taking one argument.
+The identity function is now named `lam` and is of sort `fun`.
+The `@` operator has been replaced by the function `apply`,
+together with an axiom which states that `(apply lam x)` is `x`.
 
 ## Monomorphisation
 
 Often, the natural way to express functional programs is by using
-polymorphism.  In the example above, map is defined polymorphically
-even if it is used only once in the program.
-We want problems to look natural and not encoded,
+polymorphism. In the example above, map is defined polymorphically
+even though it is used only once in the program.
+<!--We want problems to look natural and not encoded,
 so rank 1 polymorphism is supported in our tools, meaning that all definitions
-can quantify over type variables, but only at the top level.
+can quantify over type variables, but only at the top level.-->
 However, many provers do not support polymorphism.
 Though there has been work on supporting polymorphism natively
 in FO provers and SMT solvers, in particular Alt-Ergo [@BobotAltErgo], and also
@@ -260,7 +244,10 @@ section. ^[An overview of type encoding for polymorphism is [@blanchette2013enco
 TODO: Is this the right reference? ]
 -->
 
-Internally, our transformation expresses monomorphisation as horn clauses in
+Internally, our transformation expresses monomorphisation as
+first-order Horn clauses,
+
+
 predicate calculus, and then we obtain the minimal model which describes
 at which types we need to make ground typed clones of definitions.
 The clauses added for definitions make sure that all its dependencies
@@ -406,6 +393,8 @@ inductive tools with the help of TIP.
 
 # Future work and discussion and related work {#future}
 
+WHY3
+
 LAMBDA FUNCTIONS: Another way to remove higher-order functions is to
 specialize functions with cloned copies of first order functions
 (similar to monomorphisation in the next section).
@@ -444,6 +433,7 @@ Coinduction (reference to CVC work)
 
 extra features e.g. inductive predicates
 
+<!-- \AtNextBibliography{\small} -->
 \printbibliography
 
 \appendix
