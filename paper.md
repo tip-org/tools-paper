@@ -287,7 +287,7 @@ return with a set of ground instances that cover the problem, or give up.
 The transformation successfully monomorphises all but one of our benchmarks;
 the failing one has a polymorphically recursive data type.
 
-## Eliminating pattern patching
+## Eliminating pattern matching
 
 TIP provides two passes for eliminating pattern matching. The first
 one is used in the translated `map` function above, and replaces
@@ -368,8 +368,8 @@ provers and formats that lack builtin support for them.
 TIP is integrated with the theory exploration system QuickSpec [@quickspec].
 QuickSpec only accepts Haskell input, so TIP is used to translate the
 theory to Haskell, and QuickSpec's conjectures are translated back
-into TIP formulas.  This allows theorem provers to use this theory
-exploration in their tools.
+into TIP formulas. This allows theorem provers to easily use
+theory exploration.
 
 #### Counterexamples to non-theorems
 
@@ -383,9 +383,9 @@ non-theorems among conjectures.
 Rudimentophocles^[Named after the lesser-known Ancient Greek philosopher.]
 is a rudimentary inductive theorem prover, using the E theorem prover
 for first-order reasoning and QuickSpec for lemma discovery.
-It is a caricature of the functionality in HipSpec,
-but with the striking difference that, while HipSpec is 6000 lines of Haskell code,
-Rudimentophocles is a 100-line shell script built on top of TIP.
+It is a rough caricature of HipSpec, but with the striking difference
+that, while HipSpec is 6000 lines of Haskell code, Rudimentophocles is
+a 100-line shell script built on top of TIP.
 
 The source code of Rudimentophocles is found in appendix A, and an example
 run in appendix B. It works as follows:
@@ -394,9 +394,9 @@ run in appendix B. It works as follows:
 * Pick a conjecture, and a variable in that conjecture.
     - Generate proof obligations for proving the conjecture
       by induction on that variable.
-    - Translate each proof obligation to TPTP and send it to
+    - Translate each obligation to TPTP and send it to
       E (with a timeout).
-    - If all proof obligations are discharged, add the conjecture
+    - If all obligations are proved, add the conjecture
       as an axiom to the theory.
 * Repeat this process until no more conjectures can be proved,
   and print out the final theory.
