@@ -42,7 +42,7 @@ users and developers of inductive provers. The tools can currently:
 * Use theory exploration to invent new conjectures about a theory.
 
 We describe the TIP format itself in section \ref{tip-format},
-and some of the available passes in section \ref{passes}.
+and some of the available transformations in section \ref{transformations}.
 TIP improves the ecosystem of inductive provers in two ways:
 
 * _Interoperability between provers_.
@@ -191,7 +191,10 @@ Sketches how to do other formats:
 * to THF, we use the TFF1 format, but we add induction "schema" for data types.
 
 
-# Passes {#passes}
+# Transformations {#transformations}
+
+In this section we highlight some of the transformations that are
+in the toolbox.
 
 ## Applying structural induction
 
@@ -201,13 +204,13 @@ the variable at a given a position in the quantifier list. ^[TODO: the only diff
   that Why3 cannot do induction no the same variable many times, and that they
   do lexicographic induction]
 
-This is a pass that gives a separate theory for each proof obligation yielded
-by the induction pass. When using the command line tool, the theories are put
-in separate files in a directory specified as a command line argument.
+This is a transformation that gives a separate theory for each proof obligation.
+When using the command line tool, the theories are put in separate files in a
+directory specified as a command line argument.
 
-The pass can also do induction on several variables, or repeatedly do
+This transformation can also do induction on several variables, or repeatedly do
 induction on the same variable. There are some alternatives how strong
-induction hypotheses to add. This pass does not do the strongest, it uses
+induction hypotheses to add: this transformation uses
 HipSpec's heuristic and adds the strict subterms of the conclusion.
 This is predictable, symmetric and is shown to work well in practice:
 for instance, it is strong enough to prove commutativity of the normal
@@ -241,7 +244,7 @@ we support rank 1 polymorphism in our tools
 top level).  Though there has been work on supporting polymorphism natively
 in FO provers and SMT solvers, in particular Alt-Ergo [@BobotAltErgo], and also
 initial work for CVC4, this is not yet standard practice.
-Thus, we provide a monomorphisation pass that removes
+Thus, we provide a monomorphisation transformation that removes
 polymorphic definitions by cloning them at different ground types.
 
 For an inductive prover, every function definition is valuable: the more
@@ -293,7 +296,7 @@ prop_85.smt2
 
 We cannot handle a polymorphic goal now, so first you need
 to skolemise the goal at the type level. Luckily, we
-provide a pass that does just that. It introduces abstract
+provide a transformation that does just that. It introduces abstract
 sorts and substitutes them for the type variables.
 
 ```{.tip-include .NoDatas .NoCheckSat .NoFuns .TypeSkolemConjecture}
@@ -422,10 +425,10 @@ How this is can be done for functional programs is described in
 
 ## Back and forth between case and if-then-else
 
-What passes were needed to make this run smooth?
+What transformations were needed to make this run smooth?
 Say something about the examples from the Leon benchmark suite.
 
-## Other passes
+## Other transformations
 
 * Simplification
 * Removing newtypes
@@ -566,7 +569,7 @@ can we compare them?
 
 ... more formats
 
-... semantic differences, passes etc.
+... semantic differences, transformations etc.
 
 #### Making it easier to write an inductive prover
 
@@ -590,7 +593,7 @@ try it out. We want to provide off-the-shelf components that the
 author of an inductive prover can use to build their tool---just as
 someone writing an experimental first-order prover might use an
 existing clausifier instead of writing their own. TIP provides
-ready-made solutions to all three problems above: a pass for applying
+ready-made solutions to all three problems above: a transformation for applying
 structural induction, pretty-printers that transform problems into
 TPTP or SMT-LIB to be handled by a first-order prover, and access to
 the QuickSpec theory exploration system. We demonstrate this by describing
@@ -677,12 +680,12 @@ With this work we want to work on closing the gap on the inductive theorem
 proving part that is open even in the precense of work like Why3.
 Outstanding differences to Why3:
 
-* a more light-weight monomorphisation pass
+* a more light-weight monomorphisation transformation
 * haskell frontend
 * no termination check
 * quickspec support
 * low-level format suitable for expressing benchmarks
-* todos^[partiality semantics, induction pass: the only difference seems to be
+* todos^[partiality semantics, induction transformation: the only difference seems to be
   that Why3 cannot do induction no the same variable many times, and that they
   do lexicographic induction]
 
@@ -725,7 +728,7 @@ example.smt2
 * Tool chain with exciting capabilities
     (input formats (including Haskell) (add Why3 input?))
     (output formats)
-    (passes)
+    (transformations)
     (can run tools: QuickSpec, HBMC, QuickCheck, FEAT, and so on)
   Should we try get a web interface up quickly?
 
