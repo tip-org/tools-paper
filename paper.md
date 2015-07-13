@@ -394,9 +394,9 @@ run in appendix B. It works as follows:
 * Pick a conjecture, and a variable in that conjecture.
     - Generate proof obligations for proving the conjecture
       by induction on that variable.
-    - Translate each proof obligation to TPTP and send it to
+    - Translate each obligation to TPTP and send it to
       E (with a timeout).
-    - If all proof obligations are discharged, add the conjecture
+    - If all obligations are proved, add the conjecture
       as an axiom to the theory.
 * Repeat this process until no more conjectures can be proved,
   and print out the final theory.
