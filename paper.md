@@ -295,8 +295,7 @@ To start the procedure, we first Skolemise any type variables in the
 conjecture, and then add facts to the rule set for the functions
 called in the conjecture. These seed the procedure, which will either
 return with a set of ground instances that cover the problem, or give up.
-
-The transformation successfully monomorphises all but one of our benchmarks;
+The transformation is succeeds on all but one of our benchmarks;
 the failing one has a polymorphically recursive data type.
 
 ## Eliminating pattern matching
