@@ -213,7 +213,7 @@ together with an axiom which states that `(apply lam x)` is `x`.
 ## Monomorphisation
 
 Often, the natural way to express functional programs is by using
-polymorphism. In the example above, map is defined polymorphically
+polymorphism. In the example above, `map` is defined polymorphically
 even though it is used only once in the program.
 <!--We want problems to look natural and not encoded,
 so rank 1 polymorphism is supported in our tools, meaning that all definitions
