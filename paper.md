@@ -162,7 +162,7 @@ To map `succ` over a list we must therefore write
 `f` to the list element. This design keeps higher-order reasoning
 confined to the parts of the problem that use higher-order functions.
 
-# Translating TIP to other formats {#translating}
+# Transforming and translating TIP {#transforming}
 
 Although TIP is a variant of SMT-LIB, it looks quite different from
 "vanilla" SMT-LIB. In particular, most SMT solvers do not support
@@ -221,44 +221,36 @@ Sketches how to do other formats:
 
 * to THF, we use the TFF1 format, but we add induction "schema" for data types.
 
+## Lambda lifting and axiomatization of lambdas
 
-# Transformations {#transformations}
+To enable theorem provers that have no support
+for first-class functions and lambdas, we can
+defunctionalise the program and axiomatize
+the closures. The `twice`-`double` example
+above then becomes:
 
-In this section we highlight some of the transformations that are
-in the toolbox.
-
-## Applying structural induction
-
-We provide a transformation that applies structural induction over data types
-in the goal. This requires a forall quantifier of the goal at the top, and does induction on
-the variable at a given a position in the quantifier list. ^[TODO: the only difference seems to be
-  that Why3 cannot do induction no the same variable many times, and that they
-  do lexicographic induction]
-
-This is a transformation that gives a separate theory for each proof obligation.
-When using the command line tool, the theories are put in separate files in a
-directory specified as a command line argument.
-
-This transformation can also do induction on several variables, or repeatedly do
-induction on the same variable. There are some alternatives how strong
-induction hypotheses to add: this transformation uses
-HipSpec's heuristic and adds the strict subterms of the conclusion.
-This is predictable, symmetric and is shown to work well in practice:
-for instance, it is strong enough to prove commutativity of the normal
-definition of natural number addition without any lemmas when doing induction
-on both variables. Induction on both of two natural number variables,
-on an abstract predicate `p` looks like this in the last of three step cases:
-
-```{.tip .Induction-L0_1R .t3 .NoFuns}
-;.SkolemiseConjecture}
-(declare-datatypes () ((nat (zero) (succ (pred nat)))))
-(declare-fun p (nat nat) Bool)
-(assert-not (forall ((x nat) (y nat)) (p x y)))
-(check-sat)
+```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas}
+double-curried.smt2
 ```
 
-We are adding more kinds of induction, including recursion-induction and
-well-founded induction on the size of data types.
+A new abstract sort, `fun1` has been introduced
+which stands for functions taking one argument.
+The function `apply1` applies an argument to a fun.
+
+Furthermore, the theory can be monomorphised to
+remove the polymorphism from `fun1`:
+
+```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas .Monomorphise-False}
+double-curried.smt2
+```
+
+#### Discussion
+
+This is closure conversion as described in [@Reynolds72Defunctionalisation].
+A similar construction as in the monomorphisation section could be used to
+specialize higher-order functions to cloned copies of first order functions.
+How this is can be done for functional programs is described in
+[@DarlingtonSpecialisation].
 
 ## Monomorphisation
 
@@ -362,41 +354,45 @@ by cloning as in [@Oliva97fromml] in the ML setting without
 polymorphic recursion. They take extra care to do monomorphisation
 before defunctionalisation to be able to have simply typed closures.
 
-## Lambda lifting and axiomatization of lambdas
-
-To enable theorem provers that have no support
-for first-class functions and lambdas, we can
-defunctionalise the program and axiomatize
-the closures. The `twice`-`double` example
-above then becomes:
-
-```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas}
-double-curried.smt2
-```
-
-A new abstract sort, `fun1` has been introduced
-which stands for functions taking one argument.
-The function `apply1` applies an argument to a fun.
-
-Furthermore, the theory can be monomorphised to
-remove the polymorphism from `fun1`:
-
-```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas .Monomorphise-False}
-double-curried.smt2
-```
-
-#### Discussion
-
-This is closure conversion as described in [@Reynolds72Defunctionalisation].
-A similar construction as in the monomorphisation section could be used to
-specialize higher-order functions to cloned copies of first order functions.
-How this is can be done for functional programs is described in
-[@DarlingtonSpecialisation].
+## Axiomatising function definitions
 
 ## Back and forth between case and if-then-else
 
 What transformations were needed to make this run smooth?
 Say something about the examples from the Leon benchmark suite.
+
+## Applying structural induction
+
+We provide a transformation that applies structural induction over data types
+in the goal. This requires a forall quantifier of the goal at the top, and does induction on
+the variable at a given a position in the quantifier list. ^[TODO: the only difference seems to be
+  that Why3 cannot do induction no the same variable many times, and that they
+  do lexicographic induction]
+
+This is a transformation that gives a separate theory for each proof obligation.
+When using the command line tool, the theories are put in separate files in a
+directory specified as a command line argument.
+
+This transformation can also do induction on several variables, or repeatedly do
+induction on the same variable. There are some alternatives how strong
+induction hypotheses to add: this transformation uses
+HipSpec's heuristic and adds the strict subterms of the conclusion.
+This is predictable, symmetric and is shown to work well in practice:
+for instance, it is strong enough to prove commutativity of the normal
+definition of natural number addition without any lemmas when doing induction
+on both variables. Induction on both of two natural number variables,
+on an abstract predicate `p` looks like this in the last of three step cases:
+
+```{.tip .Induction-L0_1R .t3 .NoFuns}
+;.SkolemiseConjecture}
+(declare-datatypes () ((nat (zero) (succ (pred nat)))))
+(declare-fun p (nat nat) Bool)
+(assert-not (forall ((x nat) (y nat)) (p x y)))
+(check-sat)
+```
+
+We are adding more kinds of induction, including recursion-induction and
+well-founded induction on the size of data types.
 
 ## Other transformations
 
@@ -424,9 +420,7 @@ Not yet implemented:
 * Case only on variables and unroll defaults
   (another way to make a theory UEQ)
 
-# All the tools
-
-## Theory exploration by QuickSpec
+#### Theory exploration by QuickSpec
 
 `tip-spec`
 
@@ -438,7 +432,7 @@ Allows theorem provers to use QuickSpec theory exploration in their tools
                  (needs a tuple constructor with size 0)]
 
 
-## Counterexamples to non-theorems by QuickCheck and HBMC
+#### Counterexamples to non-theorems by QuickCheck and HBMC
 
 `tip-qc`
 
