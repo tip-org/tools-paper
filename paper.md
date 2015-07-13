@@ -221,36 +221,17 @@ Sketches how to do other formats:
 
 * to THF, we use the TFF1 format, but we add induction "schema" for data types.
 
-## Lambda lifting and axiomatization of lambdas
+## Lambda lifting and axiomatisation of lambdas
 
-To enable theorem provers that have no support
-for first-class functions and lambdas, we can
-defunctionalise the program and axiomatize
-the closures. The `twice`-`double` example
-above then becomes:
+To enable theorem provers that have no support for first-class functions and
+lambdas, the program is defunctionalised [@Reynolds72Defunctionalisation] and
+then the closures are axiomatised.
 
-```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas}
-double-curried.smt2
-```
-
-A new abstract sort, `fun1` has been introduced
-which stands for functions taking one argument.
-The function `apply1` applies an argument to a fun.
-
-Furthermore, the theory can be monomorphised to
-remove the polymorphism from `fun1`:
-
-```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas .Monomorphise-False}
-double-curried.smt2
-```
-
-#### Discussion
-
-This is closure conversion as described in [@Reynolds72Defunctionalisation].
-A similar construction as in the monomorphisation section could be used to
-specialize higher-order functions to cloned copies of first order functions.
-How this is can be done for functional programs is described in
-[@DarlingtonSpecialisation].
+In the translated code above, the new abstract sort `fun1` has been introduced
+which stands for functions taking one argument.  And the identity function
+lambda is now named `lam` and is of sort `fun1`. There is an apply function
+named `apply`, together with an axiom that asserts how `apply` and `lam`
+interact.
 
 ## Monomorphisation
 
@@ -468,6 +449,13 @@ prover, but it demonstrates how easy it is to experiment with new
 inductive tools with the help of TIP.
 
 # Future work {#future}
+
+LAMBDA FUNCTIONS: Another way to remove higher-order functions is to
+specialize functions with cloned copies of first order functions
+(similar to monomorphisation in the next section).
+How this is can be done for functional programs is described in
+[@DarlingtonSpecialisation].
+
 
 Future backends: Leon, Smallcheck, THF, TFF
 
