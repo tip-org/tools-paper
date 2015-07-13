@@ -262,11 +262,12 @@ As calculating the required instances is undecidable
 generates a set of rules, in the form of first-order Horn clauses,
 which say when we should generate various instances. The minimal model
 of these Horn clauses then tells us which instances are required.
-The reason we do this is to make it easy to adjust the behaviour of
+The reason we use rules is that it makes it easy to adjust the behaviour of
 the monomorphiser; different settings may include or omit
 instantiation rules.
 
-For a function definition, the rule is that when we instantiate the
+
+For a function definition, the principle is that when we instantiate the
 function, we should also instantiate everything required by the
 function. For `map`, some of the rules will be:
 
