@@ -427,10 +427,10 @@ which can be combined however the user wishes. Nonetheless, on the
 inside the systems have some similarities and we expect there to be
 fruitful exchange of ideas between them.
 
-Monomorphisation has also been used as an optimisation technique in
-compiling functional languages [@Oliva97fromml]. A similar algorithm
-to ours is formalised in [@Li08trustedsource]. That algorithm does not
-need to consider polymorphic recursion or lemmas and is thus complete.
+Monomorphisation has also been used to optimise functional programs
+[@Oliva97fromml]. A similar algorithm to ours is formalised in
+[@Li08trustedsource]. That algorithm does not need to consider
+polymorphic recursion or lemmas and is thus complete.
 
 # Future work and discussion {#future}
 
@@ -443,9 +443,9 @@ because of insufficient fuel would be turned into uninterpreted
 functions.
 
 Monomorphisation is inherently incomplete. A complete alternative is
-to encode polymorphic types, as Sledgehammer does [@blanchette2013encoding].
-These encodings introduce overhead that slows down the provers, but we
-would like to add them as an alternative.
+to encode polymorphic types [@blanchette2013encoding]. These encodings
+introduce overhead that slows down the provers, but we would like to
+add them as an alternative.
 
 An alternative to defunctionalisation is to specialise higher-order
 functions, generating all their first-order instances that are used in
@@ -458,18 +458,10 @@ recursion-induction and well-founded induction on the size of data types.
 We would also like to extend the format by adding inductive
 predicates, as well as coinduction.
 
-The work on the TIP infrastructure is very much alive, we are adding more
-benchmarks and more functionality to the toolbox.
-These are some of the areas where TIP can be improved.
-
-We have boiled down our knowledge from writing the
-HipSpec theorem prover to the TIP modular toolbox,
-with the hope of making inductive theorem proving
-more accessible for the community, a sub field
-of automated reasoning that we believe has a
-lot of potential for continued prosperous growth beyond
-the recent landwinnings.
-
+Inductive theorem proving has seen a new lease of life recently
+and we believe it has potential for growth. With TIP we hope to
+encourage that growth by fostering competition between provers
+and providing tools.
 
 \AtNextBibliography{\small}
 \printbibliography
