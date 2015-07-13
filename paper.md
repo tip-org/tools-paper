@@ -80,7 +80,7 @@ We are continually adding more tools and input and output formats to TIP.
 We are working to make TIP a universal format for induction problems,
 backed by a powerful toolchain which can be used by prover authors and
 users alike. We describe our plans for improving TIP further in
-section \ref{future}. TIP is publically available and can be downloaded
+section \ref{future}. TIP is publicly available and can be downloaded
 from <https://github.com/tip-org/tools>.
 
 # The TIP format {#tip-format}
