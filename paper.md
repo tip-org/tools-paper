@@ -402,7 +402,7 @@ benchmarks and more functionality to the toolbox.
 These are some of the areas where TIP can be improved.
 
 Another way to remove higher-order functions than defunctionalisation is to
-specialize functions with cloned copies of first order functions
+specialise functions with cloned copies of first order functions
 [@DarlingtonSpecialisation].
 
 Polymorphically recursive definitions can be approximated by letting their
@@ -417,12 +417,12 @@ guaranteeing termination and predictability.
 On the other hand, instead of monomorphisation, a complete encoding of types is
 possible. But an encoding risks introducing overhead that
 could for instance disturb trigger selection in SMT solvers.
-Such encodings have been analyzed in
+Such encodings have been analysed in
 [@blanchette2013encoding], which also outlines the "Finite Monomorphisation Algorithm"
 (sect 7.1), used in Sledgehammer. <!-- By default, the type universe
 is allowed to grow thrice, and at most 200 new formulae are allowed to be introduced. -->
 
-A similar monomorphisation algorithm has been formalized in [@Li08trustedsource]
+A similar monomorphisation algorithm has been formalised in [@Li08trustedsource]
 Their approach is basically the one to removing polymorphism
 by cloning as in [@Oliva97fromml] in the ML setting without
 polymorphic recursion. They take extra care to do monomorphisation
@@ -430,8 +430,7 @@ before defunctionalisation to be able to have simply typed closures.
 
 We want to add more kinds of induction, including recursion-induction and
 well-founded induction on the size of data types.
-We would also like to add inductive predicates, and coinductive types as in CVC4.
-
+We would also like to add inductive predicates, and coinductive types.
 
 <!-- \AtNextBibliography{\small} -->
 \printbibliography
@@ -532,7 +531,7 @@ or SMT-LIB [@smtlib25] formats. The contribution of this paper is
 
 We have boiled down our knowledge from writing HipSpec [@hipspecCADE], which
 connects Haskell, our theory exploration tool QuickSpec [@quickspec] and SMT
-and FO theorem provers.  With this work, we modularize it and make it
+and FO theorem provers.  With this work, we modularise it and make it
 accessible for the community.
 
 Your may have an new idea in one of these areas, for instance an amazing idea
@@ -691,7 +690,7 @@ Our own additions are:
 * Assert-not to be able to identify what the goal is.
   This corresponds to `goal` in Why3.
   In fact, the CVC4 induction mode needs to know which quantifier
-  to do induction on: it cannot be skolemized by hand. So an
+  to do induction on: it cannot be skolemised by hand. So an
   `assert-not` makes sense in their work, too.
 
 SMT-LIB is extensible through theories. Currently,
