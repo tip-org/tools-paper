@@ -140,7 +140,7 @@ means $\lambda (x:A).\, t$, and has type \texttt{(=> A B)} if `t` has type
 
 To map `succ` over a list we must therefore write
 `(map (lambda ((x Int)) (succ x)) xs)`---the inner `lambda` has type
-`(=> Int Int)`. In the definition of `map`, we use `(@ f x)` to apply
+\texttt{(=> Int Int)}. In the definition of `map`, we use `(@ f x)` to apply
 `f` to the list element. This design keeps higher-order reasoning
 confined to the parts of the problem that use higher-order functions.
 
