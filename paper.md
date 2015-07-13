@@ -407,13 +407,42 @@ TIP. Rudimentophocles is not intended as a serious inductive theorem
 prover, but it demonstrates how easy it is to experiment with new
 inductive tools with the help of TIP.
 
-# Future work and discussion and related work {#future}
+# Related work
 
-WHY3 [@boogie11why3]
+Why3 [@boogie11why3]
 
-The work on the TIP infrastructure is very much alive, we are adding more
-benchmarks and more functionality to the toolbox.
-These are some of the areas where TIP can be improved.
+imperative language with functional language at
+
+In comparison to Why3 [@boogie11why3],
+
+* not an own format: uses smtlib with small extensions
+* light weight:
+    * no enforced termination check on fucntion definitions
+    * no module system
+* low-overhead encodings to underlying theorem provers (comparisons?)
+
+We can work in harmony together with Why3, and to that end we
+have a why3 output mode to be able to tap into
+the resources provided by them.
+Using Why3 (WhyML?) as an input format is considered, or adding our
+extension to smtlib as an output to Why3.
+
+With this work we want to work on closing the gap on the inductive theorem
+proving part that is open even in the precense of work like Why3.
+Outstanding differences to Why3:
+
+* a more light-weight monomorphisation transformation
+* haskell frontend
+* no termination check
+* quickspec support
+* low-level format suitable for expressing benchmarks
+* todos
+
+the only difference seems to be
+  that Why3 cannot do induction on the same variable many times, and that they
+  do lexicographic induction
+
+
 
 Another way to remove higher-order functions than defunctionalisation is to
 specialise functions with cloned copies of first order functions
@@ -442,11 +471,17 @@ by cloning as in [@Oliva97fromml] in the ML setting without
 polymorphic recursion. They take extra care to do monomorphisation
 before defunctionalisation to be able to have simply typed closures.
 
+# Future work and discussion and conclusion {#future}
+
+The work on the TIP infrastructure is very much alive, we are adding more
+benchmarks and more functionality to the toolbox.
+These are some of the areas where TIP can be improved.
+
 We want to add more kinds of induction, including recursion-induction and
 well-founded induction on the size of data types.
 We would also like to add inductive predicates, and coinductive types.
 
-\AtNextBibliography{\small}
+<!-- \AtNextBibliography{\small} -->
 \printbibliography
 
 \appendix
@@ -526,7 +561,7 @@ The large number of parts makes it hard to make new inductive provers.
 You may, for example, have a grand new idea for an induction
 principle, but don't want to make your own lemma discovery system to
 try it out. We want to provide off-the-shelf components that the
-author of an inductive prover can use to build their tool---just as
+author of an inductive prover can use to build their tool-just as
 someone writing an experimental first-order prover might use an
 existing clausifier instead of writing their own. TIP provides
 ready-made solutions to all three problems above: a transformation for applying
@@ -596,34 +631,6 @@ and lowering the barrier to entry for new provers.
 
 
 #### TIP as a toolbox
-
-
-In comparison to Why3 [@boogie11why3],
-
-* not an own format: uses smtlib with small extensions
-* light weight:
-    * no enforced termination check on fucntion definitions
-    * no module system
-* low-overhead encodings to underlying theorem provers (comparisons?)
-
-We can work in harmony together with Why3, and to that end we
-have a why3 output mode to be able to tap into
-the resources provided by them.
-Using Why3 (WhyML?) as an input format is considered, or adding our
-extension to smtlib as an output to Why3.
-
-With this work we want to work on closing the gap on the inductive theorem
-proving part that is open even in the precense of work like Why3.
-Outstanding differences to Why3:
-
-* a more light-weight monomorphisation transformation
-* haskell frontend
-* no termination check
-* quickspec support
-* low-level format suitable for expressing benchmarks
-* todos^[partiality semantics, induction transformation: the only difference seems to be
-  that Why3 cannot do induction on the same variable many times, and that they
-  do lexicographic induction]
 
 
 Maybe some example property right here: side by side comparison
