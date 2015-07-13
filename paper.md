@@ -20,7 +20,7 @@ rather than a logic formula. If we stuck to only features supported by
 all the provers, we would have very little to work with.
 
 Instead, we designed a rich language which can express a wide variety
-of problems. The TIP format is an extension of SMT-LIB [@smtlib25] and
+of problems. The TIP format (short for _Tons of Inductive Problems_) is an extension of SMT-LIB [@smtlib25] and
 includes inductive datatypes, built-in integers, higher-order
 functions, polymorphism, recursive function definitions and
 first-order logic.
@@ -36,7 +36,7 @@ users and developers of inductive provers. The tools can currently:
 * Remove features from a problem that a prover does not support,
   such as higher-order functions or polymorphism.
 * Instantiate an induction schema: given a conjecture and a set
-  of variables to do induction over, generate proof obligations for
+  of variables to do induction over, generate verification obligations for
   proving the conjecture by induction.
 * Model check a problem, to falsify conjectures in it.
 * Use theory exploration to invent new conjectures about a theory.
@@ -275,7 +275,7 @@ The last line is present because `map` calls itself. In general, when
 `f` calls `g`, we add a rule that when we instantiate `f` we must
 instantiate `g`. The rule makes no difference for this example, but is
 problematic for _polymorphically recursive functions_, which call
-themselves at a bigger type. This is an obstacle for monomorphisation
+themselves at a larger type. This is an obstacle for monomorphisation
 as then there is no finite set of instances. To curb this, our
 procedure gives up after a predefined number of steps.
 
@@ -348,10 +348,10 @@ the following proof obligation (among others):
 (assert-not (forall ((x nat) (y nat)) (p x y)))
 (check-sat)
 ```
-This choice is predictable, symmetric and is khown to work well in
-practice: for instance, it is strong enough to prove commutativity of
-the normal definition of natural number addition without any lemmas
-when doing induction on both variables.
+This choice yields predictable and symmetric verification conditions and is
+known to work well in practice: for instance, it is strong enough to prove
+commutativity of the normal definition of natural number addition without any
+lemmas by doing induction on both variables.
 
 ## Other transformations and external tools
 
@@ -477,9 +477,18 @@ The work on the TIP infrastructure is very much alive, we are adding more
 benchmarks and more functionality to the toolbox.
 These are some of the areas where TIP can be improved.
 
-We want to add more kinds of induction, including recursion-induction and
-well-founded induction on the size of data types.
-We would also like to add inductive predicates, and coinductive types.
+We want to add more, stronger, kinds of induction, including
+recursion-induction and well-founded induction on the size of data types.  We
+would also like to add inductive predicates, as well as coinductive types.
+
+We have boiled down our knowledge from writing the
+HipSpec theorem prover to the TIP modular toolbox,
+with the hope of making inductive theorem proving
+more accessible for the community, a sub field
+of automated reasoning that we believe has a
+lot of potential for continued prosperous growth beyond
+the recent landwinnings.
+
 
 <!-- \AtNextBibliography{\small} -->
 \printbibliography
