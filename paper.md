@@ -270,14 +270,16 @@ The first two lines make sure that when we instantiate `map` at types `a`
 and `b` in the program, we will also instantiate the `cons` constructor at `a`
 and at `b`. For data types, we have other rules that make sure that
 if `cons` is needed at some type, we also instantiate `list` at that type.
+We also generate rules for lemmas.
 
 The last line is present because `map` calls itself. In general, when
 `f` calls `g`, we add a rule that when we instantiate `f` we must
 instantiate `g`. The rule makes no difference for this example, but is
 problematic for _polymorphically recursive functions_, which call
 themselves at a larger type. This is an obstacle for monomorphisation
-as then there is no finite set of instances. To curb this, our
-procedure gives up after a predefined number of steps.
+as the set of instances is infinite. A similar problem can occur when
+instantiating lemmas. To curb this, our procedure gives up after a
+predefined number of steps.
 
 To start the procedure, we first Skolemise any type variables in the
 conjecture, and then add facts to the rule set for the functions
@@ -409,77 +411,56 @@ inductive tools with the help of TIP.
 
 # Related work
 
-Why3 [@boogie11why3]
+The system most obviously connected to ours is Why3 [@boogie11why3].
+Like us, they have a language for expressing problems and a set of
+transformations and prover backends. The main difference is that
+Why3 emphasises imperative program verification with pre- and
+postconditions. There is a functional language like TIP inside
+Why3 but it it mostly used to write the specifications themselves.
+By contrast, TIP is specialised to induction and recursive function
+definitions. This smaller domain allows us to provide more powerful
+tools, such as theory exploration, random testing and model checking,
+which would be difficult in a larger language. Another difference is
+that Why3 manages the entire proof pipeline, taking in a problem and
+sending it to provers. We intend TIP as a modular collection of tools
+which can be combined however the user wishes. Nonetheless, on the
+inside the systems have some similarities and we expect there to be
+fruitful exchange of ideas between them.
 
-imperative language with functional language at
+Monomorphisation has also been used as an optimisation technique in
+compiling functional languages [@Oliva97fromml]. A similar algorithm
+to ours is formalised in [@Li08trustedsource]. That algorithm does not
+need to consider polymorphic recursion or lemmas and is thus complete.
 
-In comparison to Why3 [@boogie11why3],
+# Future work and discussion {#future}
 
-* not an own format: uses smtlib with small extensions
-* light weight:
-    * no enforced termination check on fucntion definitions
-    * no module system
-* low-overhead encodings to underlying theorem provers (comparisons?)
+We are experimenting with heuristics for monomorphisation.
+A particular problem is what to do when the set of instances
+is infinite. One possibility is to limit the depth of instantiations
+by using fuel arguments [@leinoFuel], guaranteeing termination and
+predictability. Function definitions that could not be instantiated
+because of insufficient fuel would be turned into uninterpreted
+functions.
 
-We can work in harmony together with Why3, and to that end we
-have a why3 output mode to be able to tap into
-the resources provided by them.
-Using Why3 (WhyML?) as an input format is considered, or adding our
-extension to smtlib as an output to Why3.
+Monomorphisation is inherently incomplete. A complete alternative is
+to encode polymorphic types, as Sledgehammer does [@blanchette2013encoding].
+These encodings introduce overhead that slows down the provers, but we
+would like to add them as an alternative.
 
-With this work we want to work on closing the gap on the inductive theorem
-proving part that is open even in the precense of work like Why3.
-Outstanding differences to Why3:
+An alternative to defunctionalisation is to specialise higher-order
+functions, generating all their first-order instances that are used in
+the problem [@DarlingtonSpecialisation]. This is a similar idea to
+monomorphisation and we plan to extend our monomorphiser to also be
+able to specialise functions.
 
-* a more light-weight monomorphisation transformation
-* haskell frontend
-* no termination check
-* quickspec support
-* low-level format suitable for expressing benchmarks
-* todos
-
-the only difference seems to be
-  that Why3 cannot do induction on the same variable many times, and that they
-  do lexicographic induction
-
-
-
-Another way to remove higher-order functions than defunctionalisation is to
-specialise functions with cloned copies of first order functions
-[@DarlingtonSpecialisation].
-
-Polymorphically recursive definitions can be approximated by letting their
-definitions unroll a one or a few times letting the leaves call
-an opaque copy. These could still be reasoned about if the abstract version
-is mentioned in an inductive hypothesis.
-Similarily, assertions that require infinitely many copies to be complete could
-be curbed with a limit on the number of copies. One way is use
-fuel arguments [@leinoFuel] to restrict the distance from the seeds,
-guaranteeing termination and predictability.
-
-On the other hand, instead of monomorphisation, a complete encoding of types is
-possible. But an encoding risks introducing overhead that
-could for instance disturb trigger selection in SMT solvers.
-Such encodings have been analysed in
-[@blanchette2013encoding], which also outlines the "Finite Monomorphisation Algorithm"
-(sect 7.1), used in Sledgehammer. <!-- By default, the type universe
-is allowed to grow thrice, and at most 200 new formulae are allowed to be introduced. -->
-
-A similar monomorphisation algorithm has been formalised in [@Li08trustedsource]
-Their approach is basically the one to removing polymorphism
-by cloning as in [@Oliva97fromml] in the ML setting without
-polymorphic recursion. They take extra care to do monomorphisation
-before defunctionalisation to be able to have simply typed closures.
-
-# Future work and discussion and conclusion {#future}
+We want to add more, stronger, kinds of induction, including
+recursion-induction and well-founded induction on the size of data types.
+We would also like to extend the format by adding inductive
+predicates, as well as coinduction.
 
 The work on the TIP infrastructure is very much alive, we are adding more
 benchmarks and more functionality to the toolbox.
 These are some of the areas where TIP can be improved.
-
-We want to add more, stronger, kinds of induction, including
-recursion-induction and well-founded induction on the size of data types.  We
-would also like to add inductive predicates, as well as coinductive types.
 
 We have boiled down our knowledge from writing the
 HipSpec theorem prover to the TIP modular toolbox,
@@ -490,9 +471,10 @@ lot of potential for continued prosperous growth beyond
 the recent landwinnings.
 
 
-<!-- \AtNextBibliography{\small} -->
+\AtNextBibliography{\small}
 \printbibliography
 
+\newpage
 \appendix
 
 # Rudimentophocles source code
