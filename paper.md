@@ -140,7 +140,7 @@ We intend TIP to be compatible with the standard theories of SMT-LIB.
 TIP supports higher-order functions, as these often crop up in
 inductive problems. We chose to make all use of these syntactically explicit:
 they are applied with the operator `@` and can only
-be created by a lambda function (and not by partial application),
+be created by a lambda function (and not by partial application).
 So if `succ` is from `Int` to `Int`,
 we cannot write `(map succ xs)`, but instead write
 `(map (lambda ((x Int)) (succ x)) xs)`. And in the definition of `map`, we use `(@ f x)` to apply
