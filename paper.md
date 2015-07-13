@@ -244,45 +244,44 @@ section. ^[An overview of type encoding for polymorphism is [@blanchette2013enco
 TODO: Is this the right reference? ]
 -->
 
-Internally, our transformation expresses monomorphisation as
-first-order Horn clauses,
+As calculating the required instances is undecidable
+[@BobotPaskevich2011frocos], our monomorphiser is heuristic. It
+generates a set of rules, in the form of first-order Horn clauses,
+which say when we should generate various instances. The minimal model
+of these Horn clauses then tells us which instances are required.
+The reason we do this is to make it easy to adjust the behaviour of
+the monomorphiser; different settings may include or omit
+instantiation rules.
 
-
-predicate calculus, and then we obtain the minimal model which describes
-at which types we need to make ground typed clones of definitions.
-The clauses added for definitions make sure that all its dependencies
-are copied. For the `map` function in, some of the rules will be:
+For a function definition, the rule is that when we instantiate the
+function, we should also instantiate everything required by the
+function. For `map`, some of the rules will be:
 
     map(a,b) -> cons(a)
     map(a,b) -> cons(b)
     map(a,b) -> map(a,b)
 
-In the snippet above, `a` and `b` are the type arguments to `map`,
-and its value arguments are not needed in the analysis. The first
-two lines make sure that if there needs to be a copy of `map` at types `a`
-and `b` in the program, we will also need the `cons` constructor at `a`
-(only occurs as a pattern in the definition), and at `b`. For data types,
-we have other rules that make sure that if `cons` is needed at some type,
-we also make copy of `list` at that type.
+In the snippet above, `a` and `b` are the type arguments to `map`.
+The first two lines make sure that when we instantiate `map` at types `a`
+and `b` in the program, we will also instantiate the `cons` constructor at `a`
+and at `b`. For data types, we have other rules that make sure that
+if `cons` is needed at some type, we also instantiate `list` at that type.
 
-The last line makes no difference for this example, but in the general case,
-_polymorphically recursive functions_ call themselves at a bigger type.
-This is an obstacle for monomorphisation as there is no finite model.
-To curb this, our procedure gives up after a predefined number of steps,
-anxious that the copying will never terminate. As shown in [@BobotPaskevich2011frocos],
-calculating the set of reachable ground instances for a polymorphic problem
-is undecidable, and their construction carries over directly in our setting.
+The last line is present because `map` calls itself. In general, when
+`f` calls `g`, we add a rule that when we instantiate `f` we must
+instantiate `g`. The rule makes no difference for this example, but is
+problematic for _polymorphically recursive functions_, which call
+themselves at a bigger type. This is an obstacle for monomorphisation
+as then there is no finite set of instances. To curb this, our
+procedure gives up after a predefined number of steps.
 
-To start the procedure, we add the ground instances from the goal (the `assert-not`)
-as rules without any preconditions. These seed the procedure, which will
-return with a set of ground instances that cover the program (unless it gives up).
-Should the goal be polymorphic, we
-skolemise it at the type level, introducing fresh abstract sorts in place
-for the type variables.
+To start the procedure, we first Skolemise any type variables in the
+conjecture, and then add facts to the rule set for the functions
+called in the conjecture. These seed the procedure, which will either
+return with a set of ground instances that cover the problem, or give up.
 
 The transformation successfully monomorphises all but one of our benchmarks;
 the failing one has a polymorphically recursive data type.
-
 
 ## Axiomatising function definitions
 
