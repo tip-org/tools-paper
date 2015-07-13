@@ -431,7 +431,7 @@ We want to add more kinds of induction, including recursion-induction and
 well-founded induction on the size of data types.
 We would also like to add inductive predicates, and coinductive types.
 
-<!-- \AtNextBibliography{\small} -->
+\AtNextBibliography{\small}
 \printbibliography
 
 \appendix
