@@ -158,7 +158,7 @@ means $\lambda (x:A).\, t$, and has type \texttt{(=> A B)} if `t` has type
 
 To map `succ` over a list we must therefore write
 `(map (lambda ((x Int)) (succ x)) xs)`---the inner `lambda` has type
-`(=> Int Int)`. In the definition of `map`, we use `(@ f x)` to apply
+\texttt{(=> Int Int)}. In the definition of `map`, we use `(@ f x)` to apply
 `f` to the list element. This design keeps higher-order reasoning
 confined to the parts of the problem that use higher-order functions.
 
@@ -257,27 +257,27 @@ on an abstract predicate `p` looks like this in the last of three step cases:
 (check-sat)
 ```
 
-We are adding more kinds of induction, including recursion-induction,
-Leino-induction (well-founded induction on the size of data types), and fixed
-point induction.
+We are adding more kinds of induction, including recursion-induction and
+well-founded induction on the size of data types.
 
 ## Monomorphisation
 
 Often, the natural way to express functional programs is by using
 polymorphism.  As an example, the problems in the benchmark suite
 define functions like list map and concatenation polymorphically, even if they
-are only used at a few, or possibly only one instance.
-However, many provers do not support polymorphism,
-or not even a monomorphic sorted logic.
+are only used at a few types.
 To make problems look natural and not like an encoding,
 we support rank 1 polymorphism in our tools
 (all definitions can quantify over type variables, but only at the
-top level).  Though there has been work on supporting polymorphism natively
+top level).
+However, many provers do not support polymorphism.
+Though there has been work on supporting polymorphism natively
 in FO provers and SMT solvers, in particular Alt-Ergo [@BobotAltErgo], and also
 initial work for CVC4, this is not yet standard practice.
 Thus, we provide a monomorphisation transformation that removes
 polymorphic definitions by cloning them at different ground types.
 
+<!--
 For an inductive prover, every function definition is valuable: the more
 functions you have when you do theory exploration, the better you know how they
 interact. In the general case, a prover needs to be able to synthesise _new_
@@ -289,113 +289,53 @@ complete procedure:
 * Polymorphic recursion: functions that call themselves at
   a bigger type, requiring infinitely many copies. Data type constructors
   can also have this property, and if cloning of assertions
-  is too aggressive, they can also lead to inifintely many copies.
+  is too aggressive, they can also lead to infinitely many copies.
 
 * As shown in [@BobotPaskevich2011frocos],
   calculating the set of reachable ground instances for a polymorphic problem
   is undecidable, and their construction carries over directly in our setting.
 
 We discuss incomplete heuristics for dealing with this in the further work
-section. It should also be noted that it is possible to encode types
-completely, but this is heavier and the
-introduced ovehead could for instance desturb trigger selection in SMT solvers.
-^[An overview of type encoding for polymorphism is [@blanchette2013encoding].
+section. ^[An overview of type encoding for polymorphism is [@blanchette2013encoding].
 TODO: Is this the right reference? ]
+-->
 
-### The construction
+Internally, our transformation expresses monomorphisation as horn clauses in
+predicate calculus, and then we obtain the minimal model which describes
+at which types we need to make ground typed clones of definitions.
+The clauses added for definitions make sure that all its dependencies
+are copied. For the `map` function in the introduction, some of the
+rules will be:
 
-We express monomorphisation as horn clauses in predicate calculus,
-and then obtain the minimal model, i.e. we have rules of the form.
+    map(a,b) -> cons(a)
+    map(a,b) -> cons(b)
+    map(a,b) -> map(a,b)
 
-    forall x1..xm . LHS1, .., LHSn -> RHS
+In the snippet above, `a` and `b` are the type arguments to `map`,
+and its value arguments are not needed in the analysis. The first
+two lines make sure that if there needs to be a copy of `map` at types `a`
+and `b` in the program, we will also need the `cons` constructor at `a`
+(only occurs as a pattern in the definition), and at `b`. For data types,
+we have other rules that make sure that if `cons` is needed at some type,
+we also make copy of `list` at that type.
 
-Where LHS1 is a term, using the variables `x1` .. `xn`.
-All variables must present somewhere in the terms `LHS1` ... `LHSn`,
-the precondition.
-We will write `forall xs. LHSs -> RHS1, .., RHSn` as an
-abbreviation for `forall xs. LHSs -> RHS1` up to `forall xs. LHSs -> RHSn`.
-The functions in the terms will be the top-level definitions
-in our program, so functions or sort declarations. The arguments
-will be the types they are applied to. Later, we will
-also introduce a fuel successor function and zero.
-We start by looking at the goal, the `assert-not` where our seeds
-are: the ground types where everything originates from.
+The last line makes no difference for this example, but in the general case,
+_polymorphically recursive functions_ call themselves at a bigger type.
+This is an obstacle for monomorphisation as there is no finite model.
+To curb this, our procedure gives up after a predefined number of steps,
+anxious that the copying will never terminate. As shown in [@BobotPaskevich2011frocos],
+calculating the set of reachable ground instances for a polymorphic problem
+is undecidable, and their construction carries over directly in our setting.
 
-```{.tip-include .NoDatas .NoCheckSat .NoFuns}
-prop_85.smt2
-```
+To start the procedure, we add the ground instances from the goal (the `assert-not`)
+as rules without any preconditions. These seed the procedure, which will
+return with a set of ground instances that cover the program (unless it gives up).
+Should the goal be polymorphic, we
+skolemise it at the type level, introducing fresh abstract sorts in place
+for the type variables.
 
-We cannot handle a polymorphic goal now, so first you need
-to skolemise the goal at the type level. Luckily, we
-provide a transformation that does just that. It introduces abstract
-sorts and substitutes them for the type variables.
-
-```{.tip-include .NoDatas .NoCheckSat .NoFuns .TypeSkolemConjecture}
-prop_85.smt2
-```
-
-We take all the functions and types mentioned in the goal and
-add them without any preconditions. Here, some of them are:
-
-    -> list(sk_a), list(sk_b), len(sk_a), len(sk_b), zip(sk_a,sk_a),
-       rev(sk_a), rev(sk_b), rev(pair(sk_a,sk_b)), ...
-
-Now, for definitions, we make sure that everything they
-need is active. So let's look at the `rev` function:
-
-    (define-fun-rec (par (a)
-      (rev ((x (list a))) (list a)
-        (match x
-          (case nil (as nil (list a)))
-          (case (cons y xs) (append (rev xs) (cons y (as nil (list a)))))))))
-
-We see that it calls and uses lists and its constructors, and also calls append
-(and itself, but luckily not at a bigger type!)
-
-    rev(a) -> rev(a), append(a), nil(a), cons(a), list(a), a
-
-Similarily, for data type definitions we also add for each
-entry (type constructor, data constructors, projectors) everything
-it needs to be in scope.
-
-As mentioned earlier, its beneficial to do theory exploration
-with many functions available. The same distinction can
-also be made for function definitions. Consider this
-slightly weird function:
-
-```.haskell
-mystery_length xs = length xs + length [xs]
-```
-
-also be made for function definitions. Consider this
-with many functions available. The same distinction can
-also be made for function definitions. Consider this
-slightly weird function:
-
-```.haskell
-mystery_length xs = length xs + length [xs]
-```
-
-It calls length on two types, one of them being bigger
-than the input. For the safe rule, we want both of
-them to be in scope, and the important parts is this:
-
-    length(x), length(list(x)) -> mystery_length(x)
-
-We can also enthusiastically instantiate this function.
-One of the rules we get is this:
-
-    length(x) -> mystery_length(x)
-
-But if we have a record `length(A)`, this leads to `mystery_length(A)`,
-which then uses `length(list(A))`, and we have infinitely many
-instantiations. We simulate cloning with the rules a few rounds,
-and if it does not terminate with that, we add _fuel arguments_
-as outlined in the next section.
-
-
-We successfully monomorphised 350 of our 351 benchmarks;
-the failing one has an irregular data type.
+We successfully monomorphised all but one of our benchmarks;
+the failing one has a polymorphically recursive data type.
 
 #### Discussion
 
@@ -409,19 +349,18 @@ guaranteeing termination and predictability.
 
 #### Related work
 
-As noted above, we could make a complete encoding of types using ideas from Nick's paper
-[@blanchette2013encoding]. That article also outlines a "Finite Monomorphisation Algorithm"
+A complete encoding of types is possible, but this has a risk of being heavier
+and the introduced overhead could for instance disturb trigger selection in SMT
+solvers. Such encodings have been analyzed in
+[@blanchette2013encoding], which also outlines a "Finite Monomorphisation Algorithm"
 (sect 7.1), with the settings in sledgehammer. By default, the type universe
 is allowed to grow thrice, and at most 200 new formulae are allowed to be introduced.
 
-We have not yet formalized our monomorphisation, but it has been done in
-[@Li08trustedsource], though they don't support polymorphic recursion
-or formulae. Their approach is basically the one to removing polymorphism
+A similar monomorphisation algorithm has been formalized in [@Li08trustedsource]
+Their approach is basically the one to removing polymorphism
 by cloning as in [@Oliva97fromml] in the ML setting without
 polymorphic recursion. They take extra care to do monomorphisation
 before defunctionalisation to be able to have simply typed closures.
-Our work can be seen as an extension of their approaches in the
-presence of polymorphic recursion and lemmas.
 
 ## Lambda lifting and axiomatization of lambdas
 
