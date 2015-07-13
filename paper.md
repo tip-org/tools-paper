@@ -329,12 +329,9 @@ function looks like this in after that transformation:
 This works when `match` expressions are only in the right hand side of an
 branch or the top level of a function. To be able to use this pass, we first
 run another provided transformation that commutes `match` expressions "upwards"
-in function definitions.
-
-## Back and forth between case and if-then-else
-
-What transformations were needed to make this run smooth?
-Say something about the examples from the Leon benchmark suite.
+in function definitions. If the problem is provided by if-then-else expressions,
+another transformations in the toolbox transforms it back into efficient
+`match` expressions.
 
 ## Applying structural induction
 
