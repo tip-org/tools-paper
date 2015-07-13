@@ -366,10 +366,10 @@ provers and formats that lack builtin support for them.
 #### Theory exploration by QuickSpec
 
 TIP is integrated with the theory exploration system QuickSpec [@quickspec].
-QuickSpec only accepts Haskell input, to TIP is used to translate the
+QuickSpec only accepts Haskell input, so TIP is used to translate the
 theory to Haskell, and QuickSpec's conjectures are translated back
-into TIP formulas.  This allows theorem provers to use this theory
-exploration in their tools.
+into TIP formulas. This allows theorem provers to easily use
+theory exploration.
 
 #### Counterexamples to non-theorems
 
@@ -383,9 +383,9 @@ non-theorems among conjectures.
 Rudimentophocles^[Named after the lesser-known Ancient Greek philosopher.]
 is a rudimentary inductive theorem prover, using the E theorem prover
 for first-order reasoning and QuickSpec for lemma discovery.
-It is a caricature of the functionality in HipSpec,
-but with the striking difference that, while HipSpec is 6000 lines of Haskell code,
-Rudimentophocles is a 100-line shell script built on top of TIP.
+It is a rough caricature of HipSpec, but with the striking difference
+that, while HipSpec is 6000 lines of Haskell code, Rudimentophocles is
+a 100-line shell script built on top of TIP.
 
 The source code of Rudimentophocles is found in appendix A, and an example
 run in appendix B. It works as follows:
