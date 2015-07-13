@@ -99,7 +99,7 @@ The `par` construct is used to introduce polymorphism.
 The `match` expression provides pattern matching and is proposed for inclusion
 in SMT-LIB 2.6.
 To support partial functions like `head`, a `match` expression may have missing
-cases, in which case its value is unspecified.
+branches, in which case its value is unspecified.
 The syntax for higher-order functions is a TIP extension and we
 discuss it below.
 
@@ -158,7 +158,7 @@ confined to the parts of the problem that use higher-order functions.
 # Transforming and translating TIP {#transforming}
 
 TIP is structured as a large number of independent transformations.
-This is true even of our file format conversions. When TIP and the
+This is true even for our file format conversions. When TIP and the
 target prover have different feature sets, our approach is to keep the
 problem in TIP as long as possible, running many small transformations
 to reduce the problem to some fragment of TIP which we can translate
@@ -200,7 +200,7 @@ defunctionalisation to eliminate the `lambda` and is using
 ## Defunctionalisation
 
 To support theorem provers that have no support for first-class functions and
-lambdas, a TIP problem can be defunctionalised [@Reynolds72Defunctionalisation].
+lambdas, a TIP problem can be defunctionalised [@defunc].
 This replaces all $\lambda$-functions in the problem with axiomatised
 function symbols.
 
@@ -357,7 +357,7 @@ when doing induction on both variables.
 
 #### Minor transformations
 
-Included in the toolbox are also a simplification passes including inlining,
+Included in the toolbox are also simplification passes including inlining,
 dead code elimination and merging equivalent or aliased functions.
 Another minor transformation removes `let`-expressions by lifting them to the top level,
 and yet another transformations axiomatises data types for
