@@ -99,7 +99,7 @@ The `par` construct is used to introduce polymorphism.
 The `match` expression provides pattern matching and is proposed for inclusion
 in SMT-LIB 2.6.
 To support partial functions like `head`, a `match` expression may have missing
-cases, in which case its value is unspecified.
+branches, in which case its value is unspecified.
 The syntax for higher-order functions is a TIP extension and we
 discuss it below.
 
@@ -158,7 +158,7 @@ confined to the parts of the problem that use higher-order functions.
 # Transforming and translating TIP {#transforming}
 
 TIP is structured as a large number of independent transformations.
-This is true even of our file format conversions. When TIP and the
+This is true even for our file format conversions. When TIP and the
 target prover have different feature sets, our approach is to keep the
 problem in TIP as long as possible, running many small transformations
 to reduce the problem to some fragment of TIP which we can translate
@@ -346,7 +346,7 @@ on an abstract predicate `p` looks like this in the last of three step cases:
 
 #### Minor transformations
 
-Included in the toolbox are also a simplification passes including inlining,
+Included in the toolbox are also simplification passes including inlining,
 dead code elimination and merging equivalent or aliased functions.
 Another minor transformation removes `let`-expressions by lifting them to the top level,
 and yet another transformations axiomatises data types for
@@ -355,7 +355,7 @@ provers and formats that lack builtin support for them.
 #### Theory exploration by QuickSpec
 
 TIP is integrated with the theory exploration system QuickSpec[@quickspec].
-QuickSpec only accepts Haskell input, to TIP is used to translate the
+QuickSpec only accepts Haskell input, so TIP is used to translate the
 theory to Haskell, and QuickSpec's conjectures are translated back
 into TIP formulas.  This allows theorem provers to use this theory
 exploration in their tools.
