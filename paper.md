@@ -69,7 +69,10 @@ TIP improves the ecosystem of inductive provers in two ways:
   TIP provides many parts of an inductive prover as ready-made
   components, so that an author who has---say---an idea for a new
   induction principle can implement just that, leaving the first-order
-  reasoning and lemma discovery to TIP. In section \ref{rudimentophocles-main}
+  reasoning and lemma discovery to TIP.
+  This is analogous to how someone writing an experimental first-order prover
+  might use an existing clausifier instead of writing their own.
+  In section \ref{rudimentophocles-main}
   we show that it is possible to stitch the TIP tools together to make
   a simple inductive prover as a shell script!
 
@@ -84,8 +87,8 @@ from <https://github.com/tip-org/tools>.
 
 The TIP format is a variant of SMT-LIB. The following problem about
 lists illustrates all of its features. We first declare the
-polymorphic list datatype `(list a)`, using the `declare-datatypes`
-syntax from SMT-LIB 2.5 [@smtlib25].
+polymorphic list datatype `(list a)`, using the widely supported
+`declare-datatypes` syntax.
 
 ```
 (declare-datatypes (a) ((list (nil) (cons (head a) (tail (list a))))))
@@ -93,7 +96,8 @@ syntax from SMT-LIB 2.5 [@smtlib25].
 
 We then define the list `map` function by pattern matching.
 The `par` construct is used to introduce polymorphism.
-Both `match` and `par` are proposed for inclusion in SMT-LIB 2.6 [@smtlib26].
+The `match` expression provides pattern matching and is proposed for inclusion
+in SMT-LIB 2.6.
 To support partial functions like `head`, a `match` expression may have missing
 cases, in which case its value is unspecified.
 The syntax for higher-order functions is a TIP extension and we
@@ -394,7 +398,7 @@ inductive tools with the help of TIP.
 
 # Future work and discussion and related work {#future}
 
-WHY3
+WHY3 [@boogie11why3]
 
 The work on the TIP infrastructure is very much alive, we are adding more
 benchmarks and more functionality to the toolbox.
