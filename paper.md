@@ -69,9 +69,10 @@ TIP improves the ecosystem of inductive provers in two ways:
   TIP provides many parts of an inductive prover as ready-made
   components, so that an author who has---say---an idea for a new
   induction principle can implement just that, leaving the first-order
-  reasoning and lemma discovery to TIP.  This is similar to how it is common
-  for someone writing an experimental first-order prover might use an existing
-  clausifier instead of writing their own. In section \ref{rudimentophocles-main}
+  reasoning and lemma discovery to TIP.
+  This is analogous to how someone writing an experimental first-order prover
+  might use an existing clausifier instead of writing their own.
+  In section \ref{rudimentophocles-main}
   we show that it is possible to stitch the TIP tools together to make
   a simple inductive prover as a shell script!
 
