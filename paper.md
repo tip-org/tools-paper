@@ -42,34 +42,22 @@ users and developers of inductive provers. The tools can currently:
 * Use theory exploration to invent new conjectures about a theory.
 
 We describe the TIP format itself in section \ref{tip-format},
-and some of the available transformations in section \ref{transformations}.
+and many of the available transformations in section \ref{transforming}.
 TIP improves the ecosystem of inductive provers in two ways:
 
 * _Interoperability between provers_.
   Almost all existing inductive theorem provers are incompatible.
   They all use different input syntaxes but, more importantly,
-  support entirely different sets of features.
+  support entirely different sets of features. This makes it
+  difficult to scientifically compare provers.
   \par
-  Most formats have their own particular foibles. For example, TPTP TFF
-  does not support if-then-else so we must transform each function
-  definition into a series of axioms. Our translations
-  \par
-  Although TIP is a variant of SMT-LIB, it looks quite different from
-  "vanilla" SMT-LIB. In particular, most SMT solvers do not support
-  polymorphism or higher-order functions and we must remove these
-  features when translating TIP to SMT-LIB.
-  \par
-  Our tools automatically remove
-  unsupported features when converting TIP to another format. Here is
-  what our tool produces when asked to translate the `map` example to
-  vanilla SMT-LIB. It has monomorphised the problem, used
-  \par
-  We use TIP to convert our inductive benchmarks to various provers'
-  input formats. TIP makes it possible to compare the strength of
-  different provers and to transport problems between provers.
-  The main task is not translating syntax but encoding features that
-  are not supported by the target prover. We elaborate on the
-  translations in section \ref{translating}.
+  TIP provides conversion tools which allow us to write one problem
+  and try it on several provers. The conversion is not just syntactic
+  but uses tools such as defunctionalisation [@defunc] and
+  monomorphisation to mask the differences between provers.
+  <!-- We describe many of these transformations in section \ref{transforming}. -->
+  We are using TIP to convert our inductive benchmarks to various provers'
+  input formats.
 
 * _Easier to make new provers._
   There are many ingredients to a good inductive prover: it must
@@ -82,13 +70,14 @@ TIP improves the ecosystem of inductive provers in two ways:
   components, so that an author who has---say---an idea for a new
   induction principle can implement just that, leaving the first-order
   reasoning and lemma discovery to TIP. In section \ref{rudimentophocles-main}
-  we demonstrate this, showing that it is possible to stitch the TIP
-  tools together to make a simple inductive prover as a shell script.
+  we show that it is possible to stitch the TIP tools together to make
+  a simple inductive prover as a shell script.
 
 We are continually adding more tools and input and output formats to TIP.
 We are working to make TIP a universal format for induction problems,
-backed by a powerful toolchain. We describe our plans for improving
-TIP further in section \ref{future}.
+backed by a powerful toolchain which can be used by prover authors and
+users alike. We describe our plans for improving TIP further in
+section \ref{future}.
 
 
 # The TIP format {#tip-format}
