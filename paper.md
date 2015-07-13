@@ -170,9 +170,9 @@ series of axioms. This happens as a TIP-to-TIP transformation.
 This approach makes TIP quite modular. It is quite easy to add a new
 converter as most of the hard work is taken care of by existing
 transformations. What's more, many of those transformations are
-useful in their own right. In this section we illustrate some of the
-available transformations by showing what stages a TIP problem goes
-through as it is being translated to SMT-LIB.
+useful in their own right. In this section we illustrate many of the
+available transformations; we will use as a running example the
+conversion of the `map` example to SMT-LIB.
 
 Although TIP is a variant of SMT-LIB, the two are quite different.
 SMT solvers often do not support polymorphism, higher-order functions
@@ -287,17 +287,22 @@ return with a set of ground instances that cover the problem, or give up.
 The transformation successfully monomorphises all but one of our benchmarks;
 the failing one has a polymorphically recursive data type.
 
-## Axiomatising function definitions
+## Eliminating pattern patching
 
-In the translated `map` function from the introduction of this section, the `match`
-expression has been translated into if-then-else (`ite`), discriminators
-(`is-nil` and `is-cons`)
-and projection functions (`head` and `tail`) by a transformation
-included in the toolbox.  For some theorem provers, using if-then-else is not
-an option, or not efficient. Another way to translate function definitions
-using `match` is to transform it to axioms which use pattern-matching on the
-left hand side. The toolbox provides this transformation as well, and the map
-function is expressed using these two axioms after that transformation:
+TIP provides two passes for eliminating pattern matching. The first
+one is used in the translated `map` function above, and replaces
+`match` with if-then-else (`ite`), discriminators (`is-nil` and
+`is-cons`) and projection functions (`head` and `tail`).
+For converting SMT-LIB to TIP format, we also provide a reverse
+transformation which replaces discriminators and projection functions
+with `match` expressions.
+
+For some theorem provers, using if-then-else is not
+an option, or not efficient. Another way to translate a function definition
+using `match` is to transform it to several axioms, one for each case.
+The toolbox provides this transformation as well, which
+transforms the `map` function into the following two axioms, which
+specify `map`'s behaviour on `nil` and `cons`:
 
 ```
 (assert (forall ((f fun)) (= (map f nil) nil)))
@@ -305,34 +310,36 @@ function is expressed using these two axioms after that transformation:
   (= (map f (cons x xs)) (cons (apply f x) (map f xs)))))
 ```
 
+The transformation works by first lifting all `match` expressions to
+the outermost level of the function definition. A function with an
+outermost `match` can easily be split into several axioms.
+
+<!--
 This works when `match` expressions are only in the right hand side of an
 branch or the top level of a function. To set this up, we first
 run another of our transformations that commutes `match` expressions "upwards"
 in function definitions. Additionally, if the problem is given using if-then-else
 expressions, another transformations in the toolbox changes them into efficient
 `match` expressions.
+-->
 
 ## Applying structural induction
 
-We supply a transformation that applies structural induction over data types
-in the goal. This requires a forall quantifier of the goal at the top, and does induction on
-the variable at a given a position in the quantifier list. ^[TODO: the only difference seems to be
-  that Why3 cannot do induction on the same variable many times, and that they
-  do lexicographic induction]
+We also supply a transformation that applies structural induction to
+the conjecture. It requires the conjecture to start with a
+$\forall$-quantifier, and does induction on the variables quantified
+there. It splits the theory into several new theories, one for each
+proof obligation. When using the command line tool, the theories are
+put in separate files in a directory specified as a command line
+argument.
 
-This is a transformation that gives a separate theory for each proof obligation.
-When using the command line tool, the theories are put in separate files in a
-directory specified as a command line argument.
-
-This transformation can also do induction on several variables, or repeatedly do
-induction on the same variable. There are some alternatives how strong
-induction hypotheses to add: this transformation uses
-HipSpec's heuristic and adds the strict subterms of the conclusion.
-This is predictable, symmetric and is shown to work well in practice:
-for instance, it is strong enough to prove commutativity of the normal
-definition of natural number addition without any lemmas when doing induction
-on both variables. Induction on both of two natural number variables,
-on an abstract predicate `p` looks like this in the last of three step cases:
+The transformation can do induction on several variables and induction
+of arbitrary depth, depending on what the user chooses. There is some
+choice about how strong the induction hypothesis should be: we copy
+HipSpec in assuming the induction hypothesis for all strict syntactic
+subterms of the conclusion. For example, if `p` is a binary predicate
+on natural numbers, proving `(p x y)` by induction on `x` and `y` gives
+the following proof obligation (among others):
 
 ```{.tip .Induction-L0_1R .t3 .NoFuns}
 ;.SkolemiseConjecture}
@@ -341,6 +348,10 @@ on an abstract predicate `p` looks like this in the last of three step cases:
 (assert-not (forall ((x nat) (y nat)) (p x y)))
 (check-sat)
 ```
+This choice is predictable, symmetric and is khown to work well in
+practice: for instance, it is strong enough to prove commutativity of
+the normal definition of natural number addition without any lemmas
+when doing induction on both variables.
 
 ## Other transformations and external tools
 
@@ -354,7 +365,7 @@ provers and formats that lack builtin support for them.
 
 #### Theory exploration by QuickSpec
 
-TIP is integrated with the theory exploration system QuickSpec[@quickspec].
+TIP is integrated with the theory exploration system QuickSpec [@quickspec].
 QuickSpec only accepts Haskell input, so TIP is used to translate the
 theory to Haskell, and QuickSpec's conjectures are translated back
 into TIP formulas.  This allows theorem provers to use this theory
@@ -362,7 +373,7 @@ exploration in their tools.
 
 #### Counterexamples to non-theorems
 
-QuickCheck[@quickcheck] can be run on the properties generated by the TIP to
+QuickCheck [@quickcheck] can be run on the properties generated by the TIP to
 Haskell translation.  Futhermore, the Haskell Bounded Model Checker, HBMC, has
 a mode to directly read TIP files.  These tools can be useful to identify
 non-theorems among conjectures.
@@ -414,7 +425,7 @@ an opaque copy. These could still be reasoned about if the abstract version
 is mentioned in an inductive hypothesis.
 Similarily, assertions that require infinitely many copies to be complete could
 be curbed with a limit on the number of copies. One way is use
-fuel arguments[@leinoFuel] to restrict the distance from the seeds,
+fuel arguments [@leinoFuel] to restrict the distance from the seeds,
 guaranteeing termination and predictability.
 
 On the other hand, instead of monomorphisation, a complete encoding of types is
@@ -440,7 +451,7 @@ We would also like to add inductive predicates, and coinductive types.
 
 \appendix
 
-# Rudimentophocles
+# Rudimentophocles source code
 
 ``` {.include .bash}
 rudimentophocles
@@ -476,7 +487,7 @@ Rudimentophocles prints a newline when it has tried all conjectures, then
 goes back and retries the failed ones (in case it can now prove them with
 the help of lemmas). In this case it manages to prove all the discovered
 conjectures, and prints out the following final theory. Notice that:
-a) the property `reverse (reverse xs) = xs` is now an axiom (`assert`)
+a) the property `(= xs (reverse (reverse xs)))` is now an axiom (`assert`)
 rather than a conjecture (`assert-not`), indicating that it has been proved,
 and b) several other proved lemmas have been added to the theory file.
 
