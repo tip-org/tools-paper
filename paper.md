@@ -287,7 +287,7 @@ return with a set of ground instances that cover the problem, or give up.
 The transformation successfully monomorphises all but one of our benchmarks;
 the failing one has a polymorphically recursive data type.
 
-## Eliminating pattern patching
+## Eliminating pattern matching
 
 TIP provides two passes for eliminating pattern matching. The first
 one is used in the translated `map` function above, and replaces
