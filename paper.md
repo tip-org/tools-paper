@@ -138,12 +138,16 @@ We intend TIP to be compatible with the standard theories of SMT-LIB.
 #### First-class functions
 
 TIP supports higher-order functions, as these often crop up in
-inductive problems. We chose to make all use of these syntactically explicit:
-they must be written explicitly as a lambda function and are applied with the operator `@`.
-If `succ` is a function from `Int` to `Int`,
-we cannot write `(map succ xs)`, but instead write
-`(map (lambda ((x Int)) (succ x)) xs)`. And in the definition of `map`, we use `(@ f x)` to apply
-`f` to the list element.
+inductive problems. We chose to make all use of these syntactically
+explicit: they must be written explicitly as a lambda function and are
+applied with the operator `@`. There is no implicit partial application.
+If `succ` is a function from `Int` to `Int`, we cannot write `(map
+succ xs)`, but instead write `(map (lambda ((x Int)) (succ x)) xs)`.
+And in the definition of `map`, we use `(@ f x)` to apply `f` to the
+list element. There is a type \texttt{(=> a b)} of first-class
+functions from `a` to `b`; `lambda` introduces values of this type and
+`@` eliminates them. This design allows us to keep the bulk of TIP
+first-order.
 
 <!--
 So as not to make provers do unnecessary
