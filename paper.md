@@ -351,11 +351,12 @@ on natural numbers, proving `(p x y)` by induction on `x` and `y` gives
 the following proof obligation (among others):
 
 ```
-(assert-not
-  (forall ((x nat) (y nat))
-    (=> (p x y) (p x (succ y)) (p (succ x) y)
-        (p (succ x) (succ y)))))
+(assert-not (forall ((x nat) (y nat))
+  (=> (p x y) (p x (succ y)) (p (succ x) y)
+      (p (succ x) (succ y)))))
 ```
+This works well in practice: it can for instance prove commutativity
+of the normal natural number plus without lemmas by doing induction on both variables.
 
 ## Other transformations and external tools
 
