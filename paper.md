@@ -68,9 +68,9 @@ TIP improves the ecosystem of inductive provers in two ways:
   tools together to make a simple inductive prover as a shell script.
 
 We are continually adding more tools and input and output formats to TIP.
-In the end we would like TIP to be a universal format for induction
-problems, backed by a powerful toolchain. We describe our plans for
-improving TIP in section \ref{future}.
+We are working to make TIP a universal format for induction problems,
+backed by a powerful toolchain. We describe our plans for improving
+TIP further in section \ref{future}.
 
 <!--
 #### Making inductive provers interoperable
@@ -224,7 +224,7 @@ syntax from SMT-LIB 2.5 [@smtlib25].
 We then define the list `map` function by pattern matching.
 The `par` construct is used to introduce polymorphism.
 Both `match` and `par` are proposed for inclusion in SMT-LIB 2.6 [@smtlib26].
-To support functions like `head`, a `match` expression may have missing
+To support partial functions like `head`, a `match` expression may have missing
 cases, in which case its value is unspecified.
 The syntax for higher-order functions is a TIP extension and we
 discuss it below.
@@ -238,10 +238,10 @@ discuss it below.
 ```
 
 Finally, we conjecture that mapping the identity function over a list
-gives the same list back. The syntax `(assert-not p)` is a TIP extension
-which is semantically equivalent to `(assert (not p))` but hints that
-`p` is a conjecture. We use this because many inductive provers treat
-the goal specially.
+gives the same list back. Many inductive provers treat the goal
+specially, so TIP uses the syntax `(assert-not p)`, which is
+semantically equivalent to `(assert (not p))` but hints that `p` is a
+conjecture rather than a negated axiom.
 
 ```
 (assert-not (par (a)
@@ -278,30 +278,21 @@ use this because many inductive provers treat the goal specially.
 
 TIP supports higher-order functions, as these often crop up in
 inductive problems. So as not to make provers do unnecessary
-higher-order reasoning, we separate the first-order and
-higher-order parts of TIP as follows.
+higher-order reasoning, we use the following design, which makes
+all use of higher-order functions explicit. Functions cannot be
+partially applied, so if `succ` is a function from `Int` to `Int` we
+cannot write `(map succ xs)`.
 
-Terms in TIP are just as in first-order logic, i.e. each function has
-an arity and must be applied to exactly the right number of arguments.
-For example, suppose `succ` is a function from `Int` to `Int`. Then
-`(succ x)` is a well-typed term,^[Assuming that `x` is an `Int`.] but
-`succ` on its own is not well-formed and we cannot write
-`(map succ xs)`.
-
-On top of this we add a type \texttt{(=> a  b)} for _first-class functions_,
-which are formed by using `lambda`. The term `(lambda ((x A)) t)`
+Instead, there is a type of _first-class functions_, \texttt{(=> a b)},
+which are built using `lambda`. The syntax `(lambda ((x A)) t)`
 means $\lambda (x:A).\, t$, and has type \texttt{(=> A B)} if `t` has type
-`B`. For example, the term `(lambda ((x Int)) (succ x))` has type
-\texttt{(=> Int Int)}, and we can pass this as an argument to `map`.
+`B`. To apply a first-class function we must write `(@ t u)`.
 
-Finally, to apply a first-class function, we use the `@` operator.
-In the definition of `map`, we use `(@ f x)` to apply `f` to the list
-element.
-
-This design keeps higher-order reasoning confined to the parts of the
-problem using higher-order functions. Higher-order functions are simply
-terms of a special type \verb|(=> a b)| which are introduced using
-`lambda` and eliminated using `@`.
+To map `succ` over a list we must therefore write
+`(map (lambda ((x Int)) (succ x)) xs)`---the inner `lambda` has type
+`(=> Int Int)`. In the definition of `map`, we use `(@ f x)` to apply
+`f` to the list element. This design keeps higher-order reasoning
+confined to the parts of the problem that use higher-order functions.
 
 # Translating TIP to other formats {#translating}
 
