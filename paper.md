@@ -227,37 +227,6 @@ We are adding more kinds of induction, including recursion-induction,
 Leino-induction (well-founded induction on the size of data types), and fixed
 point induction.
 
-## Uncurrying the theory
-
-Our Haskell frontend makes a faithful rendition of its
-curried nature: functions take one argument at a time,
-returning a new function in case there are more arguments
-coming. This makes partial application easy. When
-translating to our logic format, it gets very inefficient
-to have all the lambdas and applications around.
-This can be used for other higher-order input formats.
-To mitigate this, we have a pass that tries to
-uncurry the top-level definitions of the theory
-as much as possible.
-
-```{.tip-include}
-double-curried.smt2
-```
-
-```{.tip-include .UncurryTheory}
-double-curried.smt2
-```
-
-#### Discussion
-Currently, the pass tries to uncurry as many arguments
-as possible, but sometimes it would seem more economical
-in number of eta-expansions required to keep some
-arguments curried. In the example above, if `double`
-is only passed to a higher-order argument to
-functions like `twice`, it can be kept curried.
-Then the assertion can be expressed withot an
-eta-expansion.
-
 ## Monomorphisation
 
 Often, the natural way to express functional programs is by using
