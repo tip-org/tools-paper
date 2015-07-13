@@ -80,7 +80,7 @@ We are continually adding more tools and input and output formats to TIP.
 We are working to make TIP a universal format for induction problems,
 backed by a powerful toolchain which can be used by prover authors and
 users alike. We describe our plans for improving TIP further in
-section \ref{future}. TIP is publically available and can be downloaded
+section \ref{future}. TIP is publicly available and can be downloaded
 from <https://github.com/tip-org/tools>.
 
 # The TIP format {#tip-format}
@@ -294,7 +294,7 @@ To start the procedure, we first Skolemise any type variables in the
 conjecture, and then add facts to the rule set for the functions
 called in the conjecture. These seed the procedure, which will either
 return with a set of ground instances that cover the problem, or give up.
-The transformation is succeeds on all but one of our benchmarks;
+The transformation succeeds on all but one of our benchmarks;
 the failing one has a polymorphically recursive data type.
 
 ## Eliminating pattern matching
@@ -351,26 +351,12 @@ on natural numbers, proving `(p x y)` by induction on `x` and `y` gives
 the following proof obligation (among others):
 
 ```
-(assert-not
-  (forall ((x nat) (y nat))
-    (=> (p x y) (p x (succ y)) (p (succ x) y)
-        (p (succ x) (succ y)))))
+(assert-not (forall ((x nat) (y nat))
+  (=> (p x y) (p x (succ y)) (p (succ x) y)
+      (p (succ x) (succ y)))))
 ```
-<!--
-```{.tip .Induction-L0_1R .t3 .NoFuns}
-;.SkolemiseConjecture}
-(declare-datatypes () ((nat (zero) (succ (pred nat)))))
-(declare-fun p (nat nat) Bool)
-(assert-not (forall ((x nat) (y nat)) (p x y)))
-(check-sat)
-```
--->
-<!--
-This choice yields predictable and symmetric verification conditions and is
-known to work well in practice: for instance, it is strong enough to prove
-commutativity of the normal definition of natural number addition without any
-lemmas by doing induction on both variables.
--->
+This works well in practice: it can for instance prove commutativity
+of the normal natural number plus without lemmas by doing induction on both variables.
 
 ## Other transformations and external tools
 
