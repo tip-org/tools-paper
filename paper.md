@@ -356,27 +356,12 @@ the following proof obligation (among others):
     (=> (p x y) (p x (succ y)) (p (succ x) y)
         (p (succ x) (succ y)))))
 ```
-<!--
-```{.tip .Induction-L0_1R .t3 .NoFuns}
-;.SkolemiseConjecture}
-(declare-datatypes () ((nat (zero) (succ (pred nat)))))
-(declare-fun p (nat nat) Bool)
-(assert-not (forall ((x nat) (y nat)) (p x y)))
-(check-sat)
-```
--->
-<!--
-This choice yields predictable and symmetric verification conditions and is
-known to work well in practice: for instance, it is strong enough to prove
-commutativity of the normal definition of natural number addition without any
-lemmas by doing induction on both variables.
--->
 
 ## Other transformations and external tools
 
 #### Minor transformations
 
-TIP also include simplification passes including inlining, dead code
+TIP also includes simplification passes including inlining, dead code
 elimination and merging equivalent functions. Another transformation
 partially axiomatises inductive data types for provers and formats
 that lack builtin support for them, such as TPTP TFF. This is useful
