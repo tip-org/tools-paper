@@ -210,7 +210,7 @@ Sketches how to do other formats:
 
 * to THF, we use the TFF1 format, but we add induction "schema" for data types.
 
-## Lambda lifting and axiomatisation of lambdas
+## Defunctionalisation
 
 To enable theorem provers that have no support for first-class functions and
 lambdas, the program is defunctionalised [@Reynolds72Defunctionalisation] and
@@ -293,7 +293,7 @@ Should the goal be polymorphic, we
 skolemise it at the type level, introducing fresh abstract sorts in place
 for the type variables.
 
-We successfully monomorphised all but one of our benchmarks;
+The transformation successfully monomorphises all but one of our benchmarks;
 the failing one has a polymorphically recursive data type.
 
 
@@ -316,10 +316,10 @@ function is expressed using these two axioms after that transformation:
 ```
 
 This works when `match` expressions are only in the right hand side of an
-branch or the top level of a function. To be able to use this pass, we first
+branch or the top level of a function. To set this up, we first
 run another of our transformations that commutes `match` expressions "upwards"
-in function definitions. If the problem is given using if-then-else expressions,
-another transformations in the toolbox transforms it back into efficient
+in function definitions. Additionally, if the problem is given using if-then-else
+expressions, another transformations in the toolbox changes them into efficient
 `match` expressions.
 
 ## Applying structural induction
@@ -352,9 +352,6 @@ on an abstract predicate `p` looks like this in the last of three step cases:
 (check-sat)
 ```
 
-We are adding more kinds of induction, including recursion-induction and
-well-founded induction on the size of data types.
-
 ## Other transformations and external tools
 
 #### Minor passes
@@ -383,8 +380,8 @@ non-theorems among conjectures.
 Rudimentophocles^[Named after the lesser-known Ancient Greek philosopher.]
 is a rudimentary inductive theorem prover, using the E theorem prover
 for first-order reasoning and QuickSpec for lemma discovery.
-It is roughly equivalent in functionality to HipSpec.
-The difference is that, while HipSpec is 6000 lines of Haskell code,
+It is a caricature of the functionality in HipSpec,
+but with the striking difference that, while HipSpec is 6000 lines of Haskell code,
 Rudimentophocles is a 100-line shell script built on top of TIP.
 
 The source code of Rudimentophocles is found in appendix A, and an example
@@ -436,6 +433,10 @@ Their approach is basically the one to removing polymorphism
 by cloning as in [@Oliva97fromml] in the ML setting without
 polymorphic recursion. They take extra care to do monomorphisation
 before defunctionalisation to be able to have simply typed closures.
+
+INDUCTION: We are adding more kinds of induction, including recursion-induction and
+well-founded induction on the size of data types.
+
 
 Future backends: Leon, Smallcheck, THF, TFF
 
