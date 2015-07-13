@@ -350,6 +350,13 @@ subterms of the conclusion. For example, if `p` is a binary predicate
 on natural numbers, proving `(p x y)` by induction on `x` and `y` gives
 the following proof obligation (among others):
 
+```
+(assert-not
+  (forall ((x nat) (y nat))
+    (=> (p x y) (p x (succ y)) (p (succ x) y)
+        (p (succ x) (succ y)))))
+```
+<!--
 ```{.tip .Induction-L0_1R .t3 .NoFuns}
 ;.SkolemiseConjecture}
 (declare-datatypes () ((nat (zero) (succ (pred nat)))))
@@ -357,7 +364,7 @@ the following proof obligation (among others):
 (assert-not (forall ((x nat) (y nat)) (p x y)))
 (check-sat)
 ```
-
+-->
 <!--
 This choice yields predictable and symmetric verification conditions and is
 known to work well in practice: for instance, it is strong enough to prove
