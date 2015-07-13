@@ -200,7 +200,7 @@ defunctionalisation to eliminate the `lambda` and is using
 ## Defunctionalisation
 
 To support theorem provers that have no support for first-class functions and
-lambdas, a TIP problem can be defunctionalised [@Reynolds72Defunctionalisation].
+lambdas, a TIP problem can be defunctionalised [@defunc].
 This replaces all $\lambda$-functions in the problem with axiomatised
 function symbols.
 
