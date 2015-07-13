@@ -46,6 +46,24 @@ and some of the available transformations in section \ref{transformations}.
 TIP improves the ecosystem of inductive provers in two ways:
 
 * _Interoperability between provers_.
+  Almost all existing inductive theorem provers are incompatible.
+  They all use different input syntaxes but, more importantly,
+  support entirely different sets of features.
+  \par
+  Most formats have their own particular foibles. For example, TPTP TFF
+  does not support if-then-else so we must transform each function
+  definition into a series of axioms. Our translations
+  \par
+  Although TIP is a variant of SMT-LIB, it looks quite different from
+  "vanilla" SMT-LIB. In particular, most SMT solvers do not support
+  polymorphism or higher-order functions and we must remove these
+  features when translating TIP to SMT-LIB.
+  \par
+  Our tools automatically remove
+  unsupported features when converting TIP to another format. Here is
+  what our tool produces when asked to translate the `map` example to
+  vanilla SMT-LIB. It has monomorphised the problem, used
+  \par
   We use TIP to convert our inductive benchmarks to various provers'
   input formats. TIP makes it possible to compare the strength of
   different provers and to transport problems between provers.
@@ -53,7 +71,7 @@ TIP improves the ecosystem of inductive provers in two ways:
   are not supported by the target prover. We elaborate on the
   translations in section \ref{translating}.
 
-* _Lower barrier to entry for tool authors_.
+* _Easier to make new provers._
   There are many ingredients to a good inductive prover: it must
   instantiate induction schemas, perform first-order reasoning to
   discharge the resulting proof obligations, and discover the
@@ -146,24 +164,37 @@ confined to the parts of the problem that use higher-order functions.
 
 # Translating TIP to other formats {#translating}
 
+Although TIP is a variant of SMT-LIB, it looks quite different from
+"vanilla" SMT-LIB. In particular, most SMT solvers do not support
+polymorphism or higher-order functions and we must remove these
+features when translating TIP to SMT-LIB.
 
+Our tools automatically remove
+unsupported features when converting TIP to another format. Here is
+what our tool produces when asked to translate the `map` example to
+vanilla SMT-LIB. It has monomorphised the problem, used
+defunctionalisation to eliminate the `lambda` and is using
+`is-cons`/`head`/`tail` instead of `match` to do pattern matching.
 
 ```
 (declare-sort sk_a 0)
-(declare-sort fun1 0)
+(declare-sort fun 0)
 (declare-datatypes () ((list (nil) (cons (head sk_a) (tail list)))))
-(declare-fun apply1 (fun1 sk_a) sk_a)
-(declare-const lam fun1)
-(declare-fun map2 (fun1 list) list)
-(assert (forall ((x sk_a)) (= (apply1 lam x) x)))
-(assert
-  (forall ((f fun1) (xs list))
-    (= (map2 f xs)
-      (ite
-        (is-cons xs) (cons (apply1 f (head xs)) (map2 f (tail xs))) nil))))
-(assert (not (forall ((xs list)) (= xs (map2 lam xs)))))
+(declare-const lam fun)
+(declare-fun apply (fun sk_a) sk_a)
+(declare-fun map (fun list) list)
+(assert (forall ((x sk_a)) (= (apply lam x) x)))
+(assert (forall ((f fun) (xs list))
+  (= (map f xs)
+    (ite (is-cons xs) (cons (apply f (head xs)) (map f (tail xs))) nil))))
+(assert (not (forall ((xs list)) (= xs (map lam xs)))))
 (check-sat)
 ```
+
+Most formats have their own particular foibles. For example, TPTP TFF
+does not support if-then-else so we must transform each function
+definition into a series of axioms. Our translations
+
 
 * To vanilla SMT (for provers like CVC4 and Z3),
   We remove our own additions: HOFs, assert-not, (parametric definitions) (function definitions).
