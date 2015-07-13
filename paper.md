@@ -404,9 +404,9 @@ run in appendix B. It works as follows:
     - Translate each obligation to TPTP and send it to
       E (with a timeout).
     - If all obligations are proved, add the conjecture
-      as an axiom to the theory.
-* Repeat this process until no more conjectures can be proved,
-  and print out the final theory.
+      as an axiom to the theory for use in proving
+	  further conjectures.
+* Repeat this process until no more conjectures can be proved.
 
 The result is the input theory, but with each proved conjecture
 (taken either from the input problem or QuickSpec) added as an extra axiom.
