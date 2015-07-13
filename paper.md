@@ -210,47 +210,26 @@ Sketches how to do other formats:
 
 * to THF, we use the TFF1 format, but we add induction "schema" for data types.
 
-## Lambda lifting and axiomatization of lambdas
+## Lambda lifting and axiomatisation of lambdas
 
-To enable theorem provers that have no support
-for first-class functions and lambdas, we can
-defunctionalise the program and axiomatize
-the closures. The `twice`-`double` example
-above then becomes:
+To enable theorem provers that have no support for first-class functions and
+lambdas, the program is defunctionalised [@Reynolds72Defunctionalisation] and
+then the closures are axiomatised.
 
-```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas}
-double-curried.smt2
-```
-
-A new abstract sort, `fun1` has been introduced
-which stands for functions taking one argument.
-The function `apply1` applies an argument to a fun.
-
-Furthermore, the theory can be monomorphised to
-remove the polymorphism from `fun1`:
-
-```{.tip-include .UncurryTheory .LambdaLift .AxiomatizeLambdas .Monomorphise-False}
-double-curried.smt2
-```
-
-#### Discussion
-
-This is closure conversion as described in [@Reynolds72Defunctionalisation].
-A similar construction as in the monomorphisation section could be used to
-specialize higher-order functions to cloned copies of first order functions.
-How this is can be done for functional programs is described in
-[@DarlingtonSpecialisation].
+In the translated code above, the new abstract sort `fun1` has been introduced
+which stands for functions taking one argument.  And the identity function
+lambda is now named `lam` and is of sort `fun1`. There is an apply function
+named `apply`, together with an axiom that asserts how `apply` and `lam`
+interact.
 
 ## Monomorphisation
 
 Often, the natural way to express functional programs is by using
-polymorphism.  As an example, the problems in the benchmark suite
-define functions like list map and concatenation polymorphically, even if they
-are only used at a few types.
-To make problems look natural and not like an encoding,
-we support rank 1 polymorphism in our tools
-(all definitions can quantify over type variables, but only at the
-top level).
+polymorphism.  In the example above, map is defined polymorphically
+even if it is used only once in the program.
+We want problems to look natural and not encoded,
+so rank 1 polymorphism is supported in our tools, meaning that all definitions
+can quantify over type variables, but only at the top level.
 However, many provers do not support polymorphism.
 Though there has been work on supporting polymorphism natively
 in FO provers and SMT solvers, in particular Alt-Ergo [@BobotAltErgo], and also
@@ -285,8 +264,7 @@ Internally, our transformation expresses monomorphisation as horn clauses in
 predicate calculus, and then we obtain the minimal model which describes
 at which types we need to make ground typed clones of definitions.
 The clauses added for definitions make sure that all its dependencies
-are copied. For the `map` function in the introduction, some of the
-rules will be:
+are copied. For the `map` function in, some of the rules will be:
 
     map(a,b) -> cons(a)
     map(a,b) -> cons(b)
@@ -318,37 +296,31 @@ for the type variables.
 We successfully monomorphised all but one of our benchmarks;
 the failing one has a polymorphically recursive data type.
 
-#### Discussion
-
-Polymorphically recursive definitions  an be approximated by letting them
-definitions unroll a few times and then becoming opaque. A prover could still
-be able to reason about the opaque version of the function if it is mentioned
-in an inductive hypothesis. Similarily, assertions that require infinitely
-many copies to be complete could be curbed with a limit on the number of
-copies. One way is to be inspired by fuel arguments similar to [@leinoFuel],
-guaranteeing termination and predictability.
-
-#### Related work
-
-A complete encoding of types is possible, but this has a risk of being heavier
-and the introduced overhead could for instance disturb trigger selection in SMT
-solvers. Such encodings have been analyzed in
-[@blanchette2013encoding], which also outlines a "Finite Monomorphisation Algorithm"
-(sect 7.1), with the settings in sledgehammer. By default, the type universe
-is allowed to grow thrice, and at most 200 new formulae are allowed to be introduced.
-
-A similar monomorphisation algorithm has been formalized in [@Li08trustedsource]
-Their approach is basically the one to removing polymorphism
-by cloning as in [@Oliva97fromml] in the ML setting without
-polymorphic recursion. They take extra care to do monomorphisation
-before defunctionalisation to be able to have simply typed closures.
 
 ## Axiomatising function definitions
 
-## Back and forth between case and if-then-else
+In translated `map` function in the introduction of this section, the `match`
+expression has been translated into if-then-else (`ite`), discriminators
+(`is-nil` and `is-cons`)
+and projection functions (`head` and `tail`) by a transformation
+provided by the toolbox.  For some theorem provers, using if-then-else is not
+an option, or not efficient. An other way to translate function definitions
+using `match` is to transform it to axioms which use pattern-matching on the
+left hand side. The toolbox provides this transformation as well, and the map
+function looks like this in after that transformation:
 
-What transformations were needed to make this run smooth?
-Say something about the examples from the Leon benchmark suite.
+```
+(assert (forall ((f fun)) (= (map f nil) nil)))
+(assert (forall ((f fun) (x sk_a) (xs list))
+  (= (map f (cons x xs)) (cons (apply f x) (map f xs)))))
+```
+
+This works when `match` expressions are only in the right hand side of an
+branch or the top level of a function. To be able to use this pass, we first
+run another provided transformation that commutes `match` expressions "upwards"
+in function definitions. If the problem is provided by if-then-else expressions,
+another transformations in the toolbox transforms it back into efficient
+`match` expressions.
 
 ## Applying structural induction
 
@@ -456,7 +428,35 @@ TIP. Rudimentophocles is not intended as a serious inductive theorem
 prover, but it demonstrates how easy it is to experiment with new
 inductive tools with the help of TIP.
 
-# Future work {#future}
+# Future work and discussion and related work {#future}
+
+LAMBDA FUNCTIONS: Another way to remove higher-order functions is to
+specialize functions with cloned copies of first order functions
+(similar to monomorphisation in the next section).
+How this is can be done for functional programs is described in
+[@DarlingtonSpecialisation].
+
+
+MONOMORPHISATION: Polymorphically recursive definitions  an be approximated by letting them
+definitions unroll a few times and then becoming opaque. A prover could still
+be able to reason about the opaque version of the function if it is mentioned
+in an inductive hypothesis. Similarily, assertions that require infinitely
+many copies to be complete could be curbed with a limit on the number of
+copies. One way is to be inspired by fuel arguments similar to [@leinoFuel],
+guaranteeing termination and predictability.
+
+A complete encoding of types is possible, but this has a risk of being heavier
+and the introduced overhead could for instance disturb trigger selection in SMT
+solvers. Such encodings have been analyzed in
+[@blanchette2013encoding], which also outlines a "Finite Monomorphisation Algorithm"
+(sect 7.1), with the settings in sledgehammer. By default, the type universe
+is allowed to grow thrice, and at most 200 new formulae are allowed to be introduced.
+
+A similar monomorphisation algorithm has been formalized in [@Li08trustedsource]
+Their approach is basically the one to removing polymorphism
+by cloning as in [@Oliva97fromml] in the ML setting without
+polymorphic recursion. They take extra care to do monomorphisation
+before defunctionalisation to be able to have simply typed closures.
 
 Future backends: Leon, Smallcheck, THF, TFF
 
