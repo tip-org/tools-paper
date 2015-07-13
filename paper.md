@@ -354,11 +354,13 @@ on an abstract predicate `p` looks like this in the last of three step cases:
 
 ## Other transformations and external tools
 
-#### Minor passes
+#### Minor transformations
 
 Included in the toolbox are also a simplification passes including inlining,
 dead code elimination and merging equivalent or aliased functions.
-Another minor pass removes `let`-expressions by lifting them to the top level,
+Another minor transformation removes `let`-expressions by lifting them to the top level,
+and yet another transformations axiomatises data types for
+provers and formats that lack builtin support for them.
 
 #### Theory exploration by QuickSpec
 
@@ -406,27 +408,30 @@ inductive tools with the help of TIP.
 
 # Future work and discussion and related work {#future}
 
-LAMBDA FUNCTIONS: Another way to remove higher-order functions is to
+The work on the TIP infrastructure is very much alive, we are adding more
+benchmarks and more functionality to the toolbox.
+These are some of the areas where TIP can be improved.
+
+Another way to remove higher-order functions than defunctionalisation is to
 specialize functions with cloned copies of first order functions
-(similar to monomorphisation in the next section).
-How this is can be done for functional programs is described in
 [@DarlingtonSpecialisation].
 
-
-MONOMORPHISATION: Polymorphically recursive definitions  an be approximated by letting them
-definitions unroll a few times and then becoming opaque. A prover could still
-be able to reason about the opaque version of the function if it is mentioned
-in an inductive hypothesis. Similarily, assertions that require infinitely
-many copies to be complete could be curbed with a limit on the number of
-copies. One way is to be inspired by fuel arguments similar to [@leinoFuel],
+Polymorphically recursive definitions can be approximated by letting their
+definitions unroll a one or a few times letting the leaves call
+an opaque copy. These could still be reasoned about if the abstract version
+is mentioned in an inductive hypothesis.
+Similarily, assertions that require infinitely many copies to be complete could
+be curbed with a limit on the number of copies. One way is use
+fuel arguments[@leinoFuel] to restrict the distance from the seeds,
 guaranteeing termination and predictability.
 
-A complete encoding of types is possible, but this has a risk of being heavier
-and the introduced overhead could for instance disturb trigger selection in SMT
-solvers. Such encodings have been analyzed in
-[@blanchette2013encoding], which also outlines a "Finite Monomorphisation Algorithm"
-(sect 7.1), with the settings in sledgehammer. By default, the type universe
-is allowed to grow thrice, and at most 200 new formulae are allowed to be introduced.
+On the other hand, instead of monomorphisation, a complete encoding of types is
+possible. But an encoding risks introducing overhead that
+could for instance disturb trigger selection in SMT solvers.
+Such encodings have been analyzed in
+[@blanchette2013encoding], which also outlines the "Finite Monomorphisation Algorithm"
+(sect 7.1), used in Sledgehammer. <!-- By default, the type universe
+is allowed to grow thrice, and at most 200 new formulae are allowed to be introduced. -->
 
 A similar monomorphisation algorithm has been formalized in [@Li08trustedsource]
 Their approach is basically the one to removing polymorphism
@@ -434,15 +439,10 @@ by cloning as in [@Oliva97fromml] in the ML setting without
 polymorphic recursion. They take extra care to do monomorphisation
 before defunctionalisation to be able to have simply typed closures.
 
-INDUCTION: We are adding more kinds of induction, including recursion-induction and
+We want to add more kinds of induction, including recursion-induction and
 well-founded induction on the size of data types.
+We would also like to add inductive predicates, and coinductive types as in CVC4.
 
-
-Future backends: Leon, Smallcheck, THF, TFF
-
-Coinduction (reference to CVC work)
-
-extra features e.g. inductive predicates
 
 \printbibliography
 
