@@ -28,8 +28,9 @@ first-order logic.
 #### The TIP tools
 In this paper, we demonstrate a set of tools for transforming and
 processing inductive problems. The tools are based around the TIP
-format, and provide a wide variety of operations that are useful to
-users and developers of inductive provers. The tools can currently:
+format that we used for our benchmark suite, and provide a wide
+variety of operations that are useful to users and developers of
+inductive provers. The tools can currently:
 
 * Convert SMT-LIB and Haskell to TIP.
 * Convert TIP to SMT-LIB, TPTP TFF, Haskell, WhyML or Isabelle/HOL.
@@ -41,13 +42,13 @@ users and developers of inductive provers. The tools can currently:
 * Model check a problem, to falsify conjectures in it.
 * Use theory exploration to invent new conjectures about a theory.
 
-We describe the TIP format itself in section \ref{tip-format},
-and many of the available transformations in section \ref{transforming}.
+We describe the TIP format itself in Section \ref{tip-format},
+and many of the available transformations in Section \ref{transforming}.
 TIP improves the ecosystem of inductive provers in two ways:
 
 * _Interoperability between provers_.
   Almost all existing inductive theorem provers are incompatible.
-  They all use different input syntaxes but, more importantly,
+  They all use different input syntax but, more importantly,
   support entirely different sets of features. This makes it
   difficult to scientifically compare provers.
   \par
@@ -72,7 +73,7 @@ TIP improves the ecosystem of inductive provers in two ways:
   reasoning and lemma discovery to TIP.
   This is analogous to how someone writing an experimental first-order prover
   might use an existing clausifier instead of writing their own.
-  In section \ref{rudimentophocles-main}
+  In Section \ref{rudimentophocles-main}
   we show that it is possible to stitch the TIP tools together to make
   a simple inductive prover as a shell script!
 
@@ -80,7 +81,7 @@ We are continually adding more tools and input and output formats to TIP.
 We are working to make TIP a universal format for induction problems,
 backed by a powerful toolchain which can be used by prover authors and
 users alike. We describe our plans for improving TIP further in
-section \ref{future}. TIP is publicly available and can be downloaded
+Section \ref{future}. TIP is publicly available and can be downloaded
 from <https://github.com/tip-org/tools>.
 
 # The TIP format {#tip-format}
@@ -112,14 +113,14 @@ discuss it below.
 ```
 
 Finally, we conjecture that mapping the identity function over a list
-gives the same list back. Many inductive provers treat the goal
-specially, so TIP uses the syntax `(assert-not p)`, which is
-semantically equivalent to `(assert (not p))` but hints that `p` is a
-conjecture rather than a negated axiom.
+gives the same list back. As in SMT-LIB we assert the negation of the
+conjecture and ask the prover to derive `false`. Many
+inductive provers treat the goal specially, so TIP uses the syntax
+`(assert-not p)`, which is semantically equivalent to `(assert (not
+p))` but hints that `p` is a conjecture rather than a negated axiom.
 
 ```
-(assert-not (par (a)
-  (forall ((xs (list a)))
+(assert-not (par (a) (forall ((xs (list a)))
      (= xs (map (lambda ((x a)) x) xs)))))
 (check-sat)
 ```
@@ -182,7 +183,7 @@ series of axioms. This happens as a TIP-to-TIP transformation.
 
 This approach makes TIP quite modular. It is quite easy to add a new
 converter as most of the hard work is taken care of by existing
-transformations. What's more, many of those transformations are
+transformations. Furthermore, many of those transformations are
 useful in their own right. In this section we illustrate many of the
 available transformations; we will use as a running example the
 conversion of the `map` example to SMT-LIB.
@@ -215,19 +216,21 @@ defunctionalisation to eliminate the `lambda` and is using
 To support theorem provers that have no support for first-class functions and
 lambdas, a TIP problem can be defunctionalised [@defunc].
 This replaces all $\lambda$-functions in the problem with axiomatised
-function symbols.
+function symbols. Defunctionalisation is sound but incomplete: if the
+goal existentially quantifies over a function, it may be rendered
+unprovable. We expect this to be rare for typical inductive problems.
 
 In the example above, defunctionalisation has introduced the new
 abstract sort `fun` which stands for functions taking one argument.
-The identity function is now named `lam` and is of sort `fun`.
+The identity function is replaced by a constant `lam` of sort `fun`.
 The `@` operator has been replaced by the function `apply`,
 together with an axiom which states that `(apply lam x)` is `x`.
 
 ## Monomorphisation
 
 Often, the natural way to express functional programs is by using
-polymorphism. In the example above, `map` is defined polymorphically
-even though it is used only once in the program.
+polymorphism. <!-- In the example above, `map` is defined polymorphically -->
+<!-- even though it is used only once in the program. -->
 <!--We want problems to look natural and not encoded,
 so rank 1 polymorphism is supported in our tools, meaning that all definitions
 can quantify over type variables, but only at the top level.-->
@@ -342,8 +345,8 @@ expressions, another transformations in the toolbox changes them into efficient
 We also supply a transformation that applies structural induction to
 the conjecture. It requires the conjecture to start with a
 $\forall$-quantifier, and does induction on the variables quantified
-there. It splits the theory into several new theories, one for each
-proof obligation. When using the command line tool, the theories are
+there. It splits the problem into several new problems, one for each
+proof obligation. When using the command line tool, the problems are
 put in separate files in a directory specified as a command line
 argument.
 
@@ -378,7 +381,7 @@ an induction schema.
 
 TIP is integrated with the theory exploration system QuickSpec [@quickspec].
 QuickSpec only accepts Haskell input, so TIP is used to translate the
-theory to Haskell, and QuickSpec's conjectures are translated back
+problem to Haskell, and QuickSpec's conjectures are translated back
 into TIP formulas. This allows theorem provers to easily use
 theory exploration.
 
@@ -389,35 +392,35 @@ Haskell converter. Furthermore, the Haskell Bounded Model Checker, HBMC,
 can read TIP files.  These tools can be useful to identify
 non-theorems among conjectures.
 
-# Rudimentophocles, a simple inductive prover {#rudimentophocles-main}
+# Rudimentocrates, a simple inductive prover {#rudimentophocles-main}
 
-Rudimentophocles^[Named after the lesser-known Ancient Greek philosopher.]
+Rudimentocrates^[Named after the lesser-known Ancient Greek philosopher.]
 is a rudimentary inductive theorem prover, using the E theorem prover
 for first-order reasoning and QuickSpec for lemma discovery.
 It is a rough caricature of HipSpec, but while HipSpec is 6000 lines
-of Haskell code, Rudimentophocles is a 100-line shell script built on
+of Haskell code, Rudimentocrates is a 100-line shell script built on
 top of TIP.
 
-The source code of Rudimentophocles is found in appendix A, and an example
+The source code of Rudimentocrates is found in appendix A, and an example
 run in appendix B. It works as follows:
 
-* Run QuickSpec to find conjectures about the input theory.
+* Run QuickSpec to find conjectures about the input problem.
 * Pick a conjecture, and a variable in that conjecture.
     - Generate proof obligations for proving the conjecture
       by induction.
     - Translate each obligation to TPTP and send it to
       E (with a timeout).
     - If all obligations are proved, add the conjecture
-      as an axiom to the theory for use in proving
+      as an axiom to the problem for use in proving
 	  further conjectures.
 * Repeat this process until no more conjectures can be proved.
 
-The result is the input theory, but with each proved conjecture
+The result is the input problem, but with each proved conjecture
 (taken either from the input problem or QuickSpec) added as an extra axiom.
 
 Each of the steps---discovering conjectures, generating proof
 obligations, and translating them to TPTP---is performed by calling
-TIP. Rudimentophocles is not intended as a serious inductive theorem
+TIP. Rudimentocrates is not intended as a serious inductive theorem
 prover, but it demonstrates how easy it is to experiment with new
 inductive tools with the help of TIP.
 
@@ -458,18 +461,16 @@ functions.
 Monomorphisation is inherently incomplete. A complete alternative is
 to encode polymorphic types [@blanchette2013encoding]. These encodings
 introduce overhead that slows down the provers, but we would like to
-add them as an alternative.
-
-An alternative to defunctionalisation is to specialise higher-order
+add them as an alternative. We would also like to extend our
+monomorphiser so that it can specialise specialise higher-order
 functions, generating all their first-order instances that are used in
-the problem [@DarlingtonSpecialisation]. This is a similar idea to
-monomorphisation and we plan to extend our monomorphiser to also be
-able to specialise functions.
+the problem [@DarlingtonSpecialisation]. This would be a low-overhead
+alternative to defunctionalisation.
 
 We want to add more, stronger, kinds of induction, including
-recursion-induction and well-founded induction on the size of data types.
-We would also like to extend the format by adding inductive
-predicates, as well as coinduction.
+recursion-induction and well-founded induction. We would also like to
+extend the format by adding inductive predicates, as well as
+coinduction.
 
 Inductive theorem proving has seen a new lease of life recently
 and we believe it has more potential for growth. With TIP we hope to
@@ -482,15 +483,15 @@ providing tools.
 \newpage
 \appendix
 
-# Rudimentophocles source code
+# Rudimentocrates source code
 
 ``` {.include .bash}
 rudimentophocles
 ```
 
-# Example run of Rudimentophocles
+# Example run of Rudimentocrates
 
-Here is an example showing the output of Rudimentophocles on a simple
+Here is an example showing the output of Rudimentocrates on a simple
 theory of `append` and `reverse`. The input file has a single conjecture
 that `reverse (reverse xs) = xs`:
 
@@ -498,7 +499,7 @@ that `reverse (reverse xs) = xs`:
 rudimentophocles-in.smt2
 ```
 
-Rudimentophocles first runs QuickSpec to discover likely lemmas about
+Rudimentocrates first runs QuickSpec to discover likely lemmas about
 `append` and `reverse`:
 
 ``` {.include}
@@ -514,7 +515,7 @@ conjecture, `:)` when it proved a conjecture without induction, and
 rudimentophocles-out-2
 ```
 
-Rudimentophocles prints a newline when it has tried all conjectures, then
+Rudimentocrates prints a newline when it has tried all conjectures, then
 goes back and retries the failed ones (in case it can now prove them with
 the help of lemmas). In this case it manages to prove all the discovered
 conjectures, and prints out the following final theory. Notice that:
@@ -564,7 +565,7 @@ ready-made solutions to all three problems above: a transformation for applying
 structural induction, pretty-printers that transform problems into
 TPTP or SMT-LIB to be handled by a first-order prover, and access to
 the QuickSpec theory exploration system. We demonstrate this by describing
-Rudimentophocles, a simplistic inductive prover with lemma discovery,
+Rudimentocrates, a simplistic inductive prover with lemma discovery,
 written as a shell script which combines TIP to handle the induction
 and E to do the first-order reasoning.
 
@@ -674,7 +675,7 @@ example.smt2
 * Our framework is general: we can support different "logic" or "semantics",
 
 * We show how the command-line tools can be used to boost an inductive
-  theorem prover, dubbed Rudimentophocles.
+  theorem prover, dubbed Rudimentocrates.
   Ultimately, we can envision our tool set to be a platform for
   experimenting with induction. Developers will then not need
   to make a theorem prover from scratch, but rather plug methods
