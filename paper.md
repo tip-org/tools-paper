@@ -1,5 +1,5 @@
 ---
-abstract: TIP is a toolbox for users and developers of inductive provers. It consists of a large number of tools which can, for example, simplify an inductive problem, monomorphise it or find counterexamples to it. We are using TIP to help maintain a set of benchmarks for inductive theorem provers, where its main job is to encode features that are not natively supported by the respective provers. TIP makes it easier to write inductive provers, by supplying necessary tools such as lemma discovery which prover authors can simply import into their own prover.
+abstract: TIP is a toolbox for users and developers of inductive provers. It consists of a large number of tools which can, for example, simplify an inductive problem, monomorphise it or find counterexamples to it. We are using TIP to help maintain a set of benchmarks for inductive theorem provers, where its main job is to encode aspects of the problem that are not natively supported by the respective provers. TIP makes it easier to write inductive provers, by supplying necessary tools such as lemma discovery which prover authors can simply import into their own prover.
 ---
 
 # Introduction
@@ -16,7 +16,7 @@ compiled a benchmark suite of 343 inductive problems [@TIP-benchmarks].
 We ran into a problem: all of the provers are very different.
 Some expect the problem to be monomorphic, some expect it to be
 first-order, some expect it to be expressed as a functional program
-rather than a logic formula. If we stuck to only features supported by
+rather than a logic formula. If we stuck only to features supported by
 all the provers, we would have very little to work with.
 
 Instead, we designed a rich language which can express a wide variety
@@ -71,11 +71,11 @@ TIP improves the ecosystem of inductive provers in two ways:
   components, so that an author who has---say---an idea for a new
   induction principle can implement just that, leaving the first-order
   reasoning and lemma discovery to TIP.
-  This is analogous to how someone writing an experimental first-order prover
-  might use an existing clausifier instead of writing their own.
+  This is analogous to first-order logic where a tool author might
+  use, for example, an off-the-shelf clausifier instead of writing their own.
   In Section \ref{rudimentophocles-main}
-  we show that it is possible to stitch the TIP tools together to make
-  a simple inductive prover as a shell script!
+  we demonstrate the versatility of the TIP tools by stitching them
+  together to make a simple inductive prover as a shell script!
 
 We are continually adding more tools and input and output formats to TIP.
 We are working to make TIP a universal format for induction problems,
@@ -183,10 +183,11 @@ series of axioms. This happens as a TIP-to-TIP transformation.
 
 This approach makes TIP quite modular. It is quite easy to add a new
 converter as most of the hard work is taken care of by existing
-transformations. Furthermore, many of those transformations are
-useful in their own right. In this section we illustrate many of the
-available transformations; we will use as a running example the
-conversion of the `map` example to SMT-LIB.
+transformations.
+Furthermore, many of those transformations are useful in their own
+right. In this section we illustrate many of the available
+transformations; we will use as a running example the conversion of
+the `map` example to SMT-LIB.
 
 Although TIP is a variant of SMT-LIB, the two are quite different.
 SMT solvers often do not support polymorphism, higher-order functions
@@ -228,16 +229,17 @@ together with an axiom which states that `(apply lam x)` is `x`.
 
 ## Monomorphisation
 
-Often, the natural way to express functional programs is by using
-polymorphism. <!-- In the example above, `map` is defined polymorphically -->
+Many functional programs are naturally expressed using polymorphism.
+<!--Often, the natural way to express functional programs is by using
+polymorphism.--> <!-- In the example above, `map` is defined polymorphically -->
 <!-- even though it is used only once in the program. -->
 <!--We want problems to look natural and not encoded,
 so rank 1 polymorphism is supported in our tools, meaning that all definitions
 can quantify over type variables, but only at the top level.-->
-However, many provers do not support polymorphism.
+However, most provers do not support polymorphism.
 Though there has been work on supporting polymorphism natively
 in FO provers and SMT solvers, in particular Alt-Ergo [@BobotAltErgo], and also
-initial work for CVC4, this is not yet standard practice.
+initial work for CVC4, it is not yet standard practice.
 Thus, we provide a monomorphisation transformation that removes
 polymorphic definitions by cloning them at different ground types.
 
@@ -270,7 +272,7 @@ generates a set of rules, in the form of first-order Horn clauses,
 which say when we should generate various instances. The minimal model
 of these Horn clauses then tells us which instances are required.
 The reason we use rules is that it makes it easy to adjust the behaviour of
-the monomorphiser; different settings may include or omit
+the monomorphiser: different settings may include or omit
 instantiation rules.
 
 
@@ -373,11 +375,11 @@ of the normal natural number plus without lemmas by doing induction on both vari
 TIP also includes simplification passes including inlining, dead code
 elimination and merging equivalent functions. Another transformation
 partially axiomatises inductive data types for provers and formats
-that lack builtin support for them, such as TPTP TFF. This is useful
+that lack built-in support for them, such as TPTP TFF. This is useful
 for sending proof obligations to a first-order prover after applying
 an induction schema.
 
-#### Theory exploration by QuickSpec
+#### Theory exploration
 
 TIP is integrated with the theory exploration system QuickSpec [@quickspec].
 QuickSpec only accepts Haskell input, so TIP is used to translate the
